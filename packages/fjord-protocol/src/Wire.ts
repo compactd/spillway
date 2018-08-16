@@ -2,6 +2,8 @@ import { Socket } from 'net';
 import { readMessage, createMessage } from './utils';
 import IWireInterface from './WireInterface';
 
+const debug = require('debug')('wire');
+
 /**
  * MessageType to server
  */
@@ -33,8 +35,6 @@ export enum TorrentEvent {
   TorrentUpdate = 0x02,
   TorrentPieceAvailable = 0x04,
 }
-
-const debug = require('debug')('wire');
 
 export default class Wire {
   private _dataReceived = 0;

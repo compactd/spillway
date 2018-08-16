@@ -90,6 +90,8 @@ export function build(
   ...values: {
     length: number;
     write: (buffer: Buffer, offset: number, length: number) => number;
+
+    // tslint:disable-next-line
   }[]
 ) {
   const totalLength = values.reduce((sum, { length }) => sum + length, 0);
