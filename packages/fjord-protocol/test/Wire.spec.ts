@@ -97,4 +97,39 @@ describe('0x01 - Handshake', () => {
     server.close();
     client.destroy();
   });
+  
+  it('should emit a success response', async () => {
+    const wire = {
+      ...defaultInterface,
+      parseToken: jest.fn(() => {
+        return { hi: '0.0.0.0', hn: 'localhost' };
+      }),
+    };
+
+    const { client, server } = await createTestSockets(wire);
+
+    const res = await writeAndWait(
+      client,
+      build(
+        uint16(420),
+        bufferLength(),
+        uint8(ClientMessageType.Handshake),
+        utf8String('foobar'),
+      ),
+    );
+
+    expect(wire.parseToken).toHaveBeenCalledWith('foobar');
+
+    expect(res).toEqualBuffer(
+      build(
+        uint16(420),
+        bufferLength(),
+        uint8(ServerMessageType.HandshakeResponse),
+        uint8(1)
+      ),
+    );
+
+    server.close();
+    client.destroy();
+  });
 });
