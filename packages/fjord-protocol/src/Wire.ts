@@ -124,7 +124,7 @@ export default class Wire {
         throw new Error('Not fjord protocol for ' + firstBytes);
       }
 
-      this._totalData = data.readUInt32BE(2) + 2;
+      this._totalData = data.readUInt32BE(2);
 
       this._data = Buffer.alloc(this._totalData);
 

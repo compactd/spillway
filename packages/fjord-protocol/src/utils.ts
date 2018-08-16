@@ -16,7 +16,7 @@ export function createMessage(message: MessageType, data: Buffer) {
   const buffer = Buffer.alloc(7);
 
   buffer.writeUInt16BE(420, 0);
-  buffer.writeUInt32BE(buffer.length + dataLength - 2, 2);
+  buffer.writeUInt32BE(buffer.length + dataLength, 2);
   buffer.writeUInt8(message, 6);
 
   return Buffer.concat([buffer, data]);
