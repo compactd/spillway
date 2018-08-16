@@ -8,7 +8,9 @@
   },
   "author": "vinz243",
   "license": "MIT",
-  "dependencies": {},
+  "dependencies": {
+    "hexy": "^0.2.11"
+  },
   "devDependencies": {
     "@types/get-port": "^3.2.0",
     "get-port": "^4.0.0",

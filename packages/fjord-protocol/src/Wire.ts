@@ -66,10 +66,10 @@ export default class Wire {
       );
     } catch (err) {
       this.socket.write(
-        createMessage(ServerMessageType.HandshakeResponse, Buffer.concat([
-          Buffer.alloc(1),
-          Buffer.from(err.message)
-        ])),
+        createMessage(
+          ServerMessageType.HandshakeResponse,
+          Buffer.concat([Buffer.alloc(1), Buffer.from(err.message)]),
+        ),
       );
     }
   }
@@ -118,20 +118,17 @@ export default class Wire {
 
   private _onData(data: Buffer) {
     if (!this._data) {
-      
       const firstBytes = data.readUInt16BE(0);
 
       if (firstBytes !== 420) {
-        throw new Error('Not fjord protocol for ' + firstBytes)
-      } else {
-        data = data.slice(2);
+        throw new Error('Not fjord protocol for ' + firstBytes);
       }
 
-      this._totalData = data.readUInt32BE(0);
+      this._totalData = data.readUInt32BE(2) + 2;
 
-      this._data = Buffer.alloc(this._totalData - 4);
+      this._data = Buffer.alloc(this._totalData);
 
-      data.slice(4).copy(this._data, this._dataReceived);
+      data.slice(0).copy(this._data, this._dataReceived);
 
       this._dataReceived = data.length;
 
