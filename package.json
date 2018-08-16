@@ -4,7 +4,8 @@
   "scripts": {
     "lint": "tslint -p tsconfig.json -c tslint.json",
     "format": "prettier --write \"packages/**/*.ts\"",
-    "test": "jest"
+    "test": "jest",
+    "postinstall": "lerna bootstrap"
   },
   "devDependencies": {
     "@types/jest": "^23.3.1",
