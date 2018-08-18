@@ -1,7 +1,8 @@
 import Wire, { ServerMessageType, ClientMessageType } from '../src/Wire';
 import { Socket, createServer, Server } from 'net';
 import IWireInterface from '../src/WireInterface';
-import { uint8, build, uint16, utf8String, bufferLength } from './buffer';
+import { uint8, build, uint16, utf8String, bufferLength } from '../src/utils';
+import './buffer';
 
 import * as getPort from 'get-port';
 
@@ -97,7 +98,7 @@ describe('0x01 - Handshake', () => {
     server.close();
     client.destroy();
   });
-  
+
   it('should emit a success response', async () => {
     const wire = {
       ...defaultInterface,
@@ -125,7 +126,8 @@ describe('0x01 - Handshake', () => {
         uint16(420),
         bufferLength(),
         uint8(ServerMessageType.HandshakeResponse),
-        uint8(1)
+        uint8(1),
+        uint8(0),
       ),
     );
 

@@ -1,5 +1,6 @@
-import { uint8, build, uint16, utf8String, bufferLength } from './buffer';
+import { uint8, build, uint16, utf8String, bufferLength } from '../src/utils';
 import { readMessage, createMessage } from '../src/utils';
+import './buffer';
 
 describe('readMessage', () => {
   test('should return type and data as buffer', () => {

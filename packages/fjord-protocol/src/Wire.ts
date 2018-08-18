@@ -1,5 +1,5 @@
 import { Socket } from 'net';
-import { readMessage, createMessage } from './utils';
+import { readMessage, createMessage, build, uint8 } from './utils';
 import IWireInterface from './WireInterface';
 
 const debug = require('debug')('wire');
@@ -62,7 +62,10 @@ export default class Wire {
       this.hostname = hn;
 
       this.socket.write(
-        createMessage(ServerMessageType.HandshakeResponse, Buffer.alloc(0)),
+        createMessage(
+          ServerMessageType.HandshakeResponse,
+          build(uint8(1), uint8(0)),
+        ),
       );
     } catch (err) {
       this.socket.write(
