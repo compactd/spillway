@@ -1,7 +1,14 @@
 import Wire, { ServerMessageType, ClientMessageType } from '../src/Wire';
 import { Socket, createServer, Server } from 'net';
 import IWireInterface from '../src/WireInterface';
-import { uint8, build, uint16, utf8String, bufferLength } from '../src/utils';
+import {
+  uint8,
+  build,
+  uint16,
+  utf8String,
+  bufferLength,
+  BufferPart,
+} from '../src/utils';
 import './buffer';
 
 import * as getPort from 'get-port';
@@ -60,78 +67,79 @@ const defaultInterface: IWireInterface = {
   getFilesForTorrent: () => {
     throw new Error('Not impl');
   },
+  subscribeClient: () => {
+    throw new Error('Not impl');
+  },
+  startTorrent: () => {
+    throw new Error('Not impl');
+  },
 };
 
+function testImmediateResponse(
+  wireInterface: Partial<IWireInterface>,
+  ...parts: BufferPart[]
+) {
+  return {
+    with: async (...expected: BufferPart[]) => {
+      const wire = {
+        ...defaultInterface,
+        ...wireInterface,
+      };
+
+      const { client, server } = await createTestSockets(wire);
+
+      const res = await writeAndWait(client, build(...parts));
+
+      expect(res).toEqualBuffer(build(...expected));
+
+      server.close();
+      client.destroy();
+    },
+  };
+}
+
 describe('0x01 - Handshake', () => {
-  it('should emit a failure response', async () => {
-    const wire = {
-      ...defaultInterface,
-      parseToken: jest.fn(() => {
-        throw new Error('foomessage');
-      }),
-    };
+  it('should emit a success response', async () => {
+    const parseToken = jest.fn(() => {
+      throw new Error('foomessage');
+    });
 
-    const { client, server } = await createTestSockets(wire);
-
-    const res = await writeAndWait(
-      client,
-      build(
-        uint16(420),
-        bufferLength(),
-        uint8(ClientMessageType.Handshake),
-        utf8String('foobar'),
-      ),
+    await testImmediateResponse(
+      { parseToken },
+      uint16(420),
+      bufferLength(),
+      uint8(ClientMessageType.Handshake),
+      utf8String('foobar'),
+    ).with(
+      uint16(420),
+      bufferLength(),
+      uint8(ServerMessageType.HandshakeResponse),
+      uint8(0),
+      utf8String('foomessage'),
     );
 
-    expect(wire.parseToken).toHaveBeenCalledWith('foobar');
-
-    expect(res).toEqualBuffer(
-      build(
-        uint16(420),
-        bufferLength(),
-        uint8(ServerMessageType.HandshakeResponse),
-        uint8(0),
-        utf8String('foomessage'),
-      ),
-    );
-
-    server.close();
-    client.destroy();
+    expect(parseToken).toHaveBeenCalledWith('foobar');
   });
 
   it('should emit a success response', async () => {
-    const wire = {
-      ...defaultInterface,
-      parseToken: jest.fn(() => {
-        return { hi: '0.0.0.0', hn: 'localhost' };
-      }),
-    };
+    const parseToken = jest.fn(() => {
+      return { hi: '0.0.0.0', hn: 'localhost' };
+    });
 
-    const { client, server } = await createTestSockets(wire);
-
-    const res = await writeAndWait(
-      client,
-      build(
-        uint16(420),
-        bufferLength(),
-        uint8(ClientMessageType.Handshake),
-        utf8String('foobar'),
-      ),
+    await testImmediateResponse(
+      { parseToken },
+      uint16(420),
+      bufferLength(),
+      uint8(ClientMessageType.Handshake),
+      utf8String('foobar'),
+    ).with(
+      uint16(420),
+      bufferLength(),
+      uint8(ServerMessageType.HandshakeResponse),
+      uint8(1),
+      uint8(0),
     );
 
-    expect(wire.parseToken).toHaveBeenCalledWith('foobar');
-
-    expect(res).toEqualBuffer(
-      build(
-        uint16(420),
-        bufferLength(),
-        uint8(ServerMessageType.HandshakeResponse),
-        uint8(1),
-        uint8(0),
-      ),
-    );
-
-    server.close();
-    client.destroy();
+    expect(parseToken).toHaveBeenCalledWith('foobar');
   });
 });

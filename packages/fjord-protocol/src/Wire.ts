@@ -31,11 +31,6 @@ export enum ServerEvent {
   ClientConnected = 0x02,
 }
 
-export enum TorrentEvent {
-  TorrentUpdate = 0x02,
-  TorrentPieceAvailable = 0x04,
-}
-
 export default class Wire {
   private _dataReceived = 0;
   private _totalData = 0;
