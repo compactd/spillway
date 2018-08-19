@@ -35,15 +35,11 @@ function createTestSockets(
         server,
       });
     });
+    
     client.setNoDelay(true);
-    client.on('error', console.log);
-    server.on('error', console.log);
 
     getPort().then(port => {
       server.listen(port, () => {
-        console.log(`Creating local server on port ${port}`);
-        server.on('close', () => console.log(`Closed server at ${port}`));
-        client.on('close', () => console.log('closed socket', port));
         client.connect({
           host: 'localhost',
           port,
@@ -277,7 +273,6 @@ describe('0x05 - subscribe to torrent specific events', () => {
     });
     
     await waitForExpect(() => {
-      console.log(cb.mock)
       expect(cb.mock.calls[0][0]).toEqualBuffer(build(
         uint16(420),
         bufferLength(),
