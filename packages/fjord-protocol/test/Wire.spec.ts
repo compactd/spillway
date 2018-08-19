@@ -37,9 +37,12 @@ function createTestSockets(
     });
     client.setNoDelay(true);
     client.on('error', console.log);
+    server.on('error', console.log);
 
     getPort().then(port => {
       server.listen(port, () => {
+        console.log(`Creating local server on port ${port}`);
+        server.on('close', () => console.log(`Closed server at ${port}`));
         client.connect({
           host: 'localhost',
           port,
