@@ -110,7 +110,7 @@ function testImmediateResponse(
   };
 }
 
-describe.only('0x01 - Handshake', () => {
+describe('0x01 - Handshake', () => {
   it('should emit a failure response with parseToken throwing', async () => {
     const parseToken = jest.fn(() => {
       throw new Error('foomessage');
@@ -184,7 +184,7 @@ describe('0x04 - start torrent', () => {
   });
 });
 
-describe('0x05 - subscribe to torrent specific events', () => {
+describe.only('0x05 - subscribe to torrent specific events', () => {
   const wireInterface = {
     ...defaultInterface,
     subscribeTE: jest.fn(),
