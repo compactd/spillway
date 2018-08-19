@@ -1,10 +1,10 @@
 import { MessageType } from './Wire';
 import { equal } from 'assert';
 
-export function readMessage(buff: Buffer) {
-  const message = buff.readUInt8(6) as MessageType;
+export function readMessage(buffer: Buffer) {
+  const message = buffer.readUInt8(6) as MessageType;
 
-  const data = buff.slice(7);
+  const data = buffer.slice(7);
 
   return {
     message,
@@ -14,13 +14,13 @@ export function readMessage(buff: Buffer) {
 
 export function createMessage(message: MessageType, data: Buffer) {
   const dataLength = data ? data.length : 0;
-  const buff = Buffer.alloc(7);
+  const buffer = Buffer.alloc(7);
 
-  buff.writeUInt16BE(420, 0);
-  buff.writeUInt32BE(buff.length + dataLength, 2);
-  buff.writeUInt8(message, 6);
+  buffer.writeUInt16BE(420, 0);
+  buffer.writeUInt32BE(buffer.length + dataLength, 2);
+  buffer.writeUInt8(message, 6);
 
-  return Buffer.concat([buff, data]);
+  return Buffer.concat([buffer, data]);
 }
 
 export function uint8(val: number) {
@@ -59,7 +59,7 @@ export function utf8String(val: string) {
   };
 }
 
-export function buffer(buff: Buffer) {
+export function rawBuffer(buff: Buffer) {
   return {
     length: buff.length,
     write: (target: Buffer, offset: number) =>
@@ -67,7 +67,7 @@ export function buffer(buff: Buffer) {
   };
 }
 
-export const hexString = (val: string) => buffer(Buffer.from(val, 'hex'));
+export const hexString = (val: string) => rawBuffer(Buffer.from(val, 'hex'));
 
 export interface BufferPart {
   length: number;
@@ -76,10 +76,10 @@ export interface BufferPart {
 
 export function build(...values: BufferPart[]) {
   const totalLength = values.reduce((sum, { length }) => sum + length, 0);
-  const buff = Buffer.alloc(totalLength);
+  const buffer = Buffer.alloc(totalLength);
 
   const written = values.reduce((offset, { write }) => {
-    const i = write(buff, offset, totalLength);
+    const i = write(buffer, offset, totalLength);
 
     return i;
   }, 0);
