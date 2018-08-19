@@ -92,7 +92,7 @@ export default class Wire {
         ({ pieces }) => {
           this.socket.write(
             createMessage(
-              ServerMessageType.TorrentPiece,
+              ServerMessageType.TorrentEvent,
               Buffer.concat([
                 Buffer.from(Uint8Array.from([TorrentEvent.TorrentPiece])),
                 Buffer.from(info, 'hex'),
@@ -118,6 +118,7 @@ export default class Wire {
         }) => {
           this.socket.write(
             createMessage(
+              ServerMessageType.TorrentEvent,
               Buffer.concat([
                 Buffer.from(Uint8Array.from([TorrentEvent.TorrentUpdate])),
                 Buffer.from(Uint8Array.from([status, peers])),
