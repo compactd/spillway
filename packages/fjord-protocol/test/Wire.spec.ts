@@ -185,7 +185,7 @@ describe('0x04 - start torrent', () => {
   });
 });
 
-describe.only('0x05 - subscribe to torrent specific events', () => {
+describe('0x05 - subscribe to torrent specific events', () => {
   const wireInterface = {
     ...defaultInterface,
     subscribeTE: jest.fn(),
@@ -243,46 +243,29 @@ describe.only('0x05 - subscribe to torrent specific events', () => {
   });
 
   it('sends 0x10 packet with indexes when callback called', () => {
-    client.on('data', (data: Buffer) => {
-      expect(data).toEqualBuffer(
-        build(
-          uint16(420),
-          bufferLength(),
-          uint8(ServerMessageType.TorrentEvent),
-          hexString(hash),
-          uint8(TorrentEvent.TorrentPiece),
-          uint32(1),
-          uint32(2),
-          uint32(1337),
-        ),
-      );
-      done();
-    });
+    const cb = jest.fn();
+    client.on('data', cb);
 
     byType[TorrentEvent.TorrentPiece]({
       pieces: Uint32Array.from([1, 2, 1337]),
     });
-  });
-  it.only('sends 0x10 packet with stats when callback called', () => {
-    console.log('tests');
-    client.on('data', (data: Buffer) => {
-      expect(data).toEqualBuffer(
-        build(
-          uint16(420),
-          bufferLength(),
-          uint8(ServerMessageType.TorrentEvent),
-          hexString(hash),
-          uint8(TorrentEvent.TorrentUpdate),
-          uint8(2),
-          uint8(25),
-          uint32(42),
-          uint32(50),
-          uint32(3),
-          uint32(4),
-        ),
-      );
-      done();
+    
+    await waitForExpect(() => {
+      build(
+        uint16(420),
+        bufferLength(),
+        uint8(ServerMessageType.TorrentEvent),
+        hexString(hash),
+        uint8(TorrentEvent.TorrentPiece),
+        uint32(1),
+        uint32(2),
+        uint32(1337),
+      )
     });
+  });
+  it('sends 0x10 packet with stats when callback called', () => {
+    const cb = jest.fn();
+    client.on('data', cb);
 
     byType[TorrentEvent.TorrentUpdate]({
       status: TorrentStatus.Downloading,
@@ -291,6 +274,22 @@ describe.only('0x05 - subscribe to torrent specific events', () => {
       uploaded: 50,
       downloadSpeed: 3,
       uploadSpeed: 4,
+    });
+    
+    await waitForExpect(() => {
+      expect(cb).toHaveBeenCalledWith(build(
+        uint16(420),
+        bufferLength(),
+        uint8(ServerMessageType.TorrentEvent),
+        hexString(hash),
+        uint8(TorrentEvent.TorrentUpdate),
+        uint8(2),
+        uint8(25),
+        uint32(42),
+        uint32(50),
+        uint32(3),
+        uint32(4),
+      ));
     });
   });
 });
