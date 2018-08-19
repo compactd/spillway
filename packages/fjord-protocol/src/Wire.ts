@@ -94,7 +94,7 @@ export default class Wire {
             createMessage(
               ServerMessageType.TorrentEvent,
               Buffer.concat([
-                Buffer.from(Uint8Array.from([TorrentEvent.TorrentPiece])),
+                Buffer.from(Uint8Array.of(TorrentEvent.TorrentPiece).buffer),
                 Buffer.from(info, 'hex'),
                 Buffer.from(pieces.buffer),
               ]),
@@ -120,7 +120,8 @@ export default class Wire {
             createMessage(
               ServerMessageType.TorrentEvent,
               Buffer.concat([
-                Buffer.from(Uint8Array.from([TorrentEvent.TorrentUpdate])),
+                Buffer.from(Uint8Array.of(TorrentEvent.TorrentUpdate).buffer),
+                Buffer.from(info, 'hex'),
                 Buffer.from(Uint8Array.from([status, peers])),
                 Buffer.from(
                   Uint32Array.from([
