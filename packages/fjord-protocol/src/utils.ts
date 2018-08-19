@@ -1,10 +1,10 @@
 import { MessageType } from './Wire';
 import { equal } from 'assert';
 
-export function readMessage(buffer: Buffer) {
-  const message = buffer.readUInt8(6) as MessageType;
+export function readMessage(buff: Buffer) {
+  const message = buff.readUInt8(6) as MessageType;
 
-  const data = buffer.slice(7);
+  const data = buff.slice(7);
 
   return {
     message,
@@ -14,13 +14,13 @@ export function readMessage(buffer: Buffer) {
 
 export function createMessage(message: MessageType, data: Buffer) {
   const dataLength = data ? data.length : 0;
-  const buffer = Buffer.alloc(7);
+  const buff = Buffer.alloc(7);
 
-  buffer.writeUInt16BE(420, 0);
-  buffer.writeUInt32BE(buffer.length + dataLength, 2);
-  buffer.writeUInt8(message, 6);
+  buff.writeUInt16BE(420, 0);
+  buff.writeUInt32BE(buff.length + dataLength, 2);
+  buff.writeUInt8(message, 6);
 
-  return Buffer.concat([buffer, data]);
+  return Buffer.concat([buff, data]);
 }
 
 export function uint8(val: number) {
@@ -76,10 +76,10 @@ export interface BufferPart {
 
 export function build(...values: BufferPart[]) {
   const totalLength = values.reduce((sum, { length }) => sum + length, 0);
-  const buffer = Buffer.alloc(totalLength);
+  const buff = Buffer.alloc(totalLength);
 
   const written = values.reduce((offset, { write }) => {
-    const i = write(buffer, offset, totalLength);
+    const i = write(buff, offset, totalLength);
 
     return i;
   }, 0);

@@ -1,6 +1,3 @@
-import { isBuffer } from 'util';
-import { equal } from 'assert';
-
 const { hexy } = require('hexy') as any;
 
 export function hexDump(buff: Buffer) {
