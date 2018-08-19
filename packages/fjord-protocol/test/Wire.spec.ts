@@ -110,7 +110,7 @@ function testImmediateResponse(
   };
 }
 
-describe('0x01 - Handshake', () => {
+describe.only('0x01 - Handshake', () => {
   it('should emit a failure response with parseToken throwing', async () => {
     const parseToken = jest.fn(() => {
       throw new Error('foomessage');
