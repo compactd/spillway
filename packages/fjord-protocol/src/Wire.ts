@@ -1,6 +1,6 @@
 import { Socket } from 'net';
-import { readMessage, createMessage, build, uint8 } from './utils';
-import IWireInterface from './WireInterface';
+import { readMessage, createMessage, build, uint8, uint32 } from './utils';
+import IWireInterface, { TorrentEvent } from './WireInterface';
 
 const debug = require('debug')('wire');
 
@@ -48,10 +48,6 @@ export default class Wire {
     return this.authenticated && this.socket.writable;
   }
 
-  onTorrentEvent(hash: string, arg1: number, onTorrentEvent: any): any {
-    throw new Error('Method not implemented.');
-  }
-
   onMessageHandshake(token: string) {
     try {
       const { hi, hn } = this.wireInterface.parseToken(token);
@@ -82,6 +78,61 @@ export default class Wire {
     }
 
     this.wireInterface.startTorrent(data);
+  }
+
+  onMessageSubscribeTE(info: string, mask: number) {
+    if (!this.authenticated) {
+      return this.socket.destroy();
+    }
+
+    if (mask & TorrentEvent.TorrentPiece) {
+      this.wireInterface.subscribeTE(
+        info,
+        TorrentEvent.TorrentPiece,
+        ({ pieces }) => {
+          this.socket.write(
+            createMessage(
+              ServerMessageType.TorrentPiece,
+              Buffer.concat([
+                Buffer.from(Uint8Array.from([TorrentEvent.TorrentPiece])),
+                Buffer.from(info, 'hex'),
+                Buffer.from(pieces.buffer),
+              ]),
+            ),
+          );
+        },
+      );
+    }
+
+    if (mask & TorrentEvent.TorrentUpdate) {
+      this.wireInterface.subscribeTE(
+        info,
+        TorrentEvent.TorrentUpdate,
+        ({
+          status,
+          peers,
+          downloaded,
+          uploaded,
+          downloadSpeed,
+          uploadSpeed,
+        }) => {
+          this.socket.write(
+            Buffer.concat([
+              Buffer.from(Uint8Array.from([TorrentEvent.TorrentUpdate])),
+              Buffer.from(Uint8Array.from([status, peers])),
+              Buffer.from(
+                Uint32Array.from([
+                  downloaded,
+                  uploaded,
+                  downloadSpeed,
+                  uploadSpeed,
+                ]).buffer,
+              ),
+            ]),
+          );
+        },
+      );
+    }
   }
 
   private writePiece(
@@ -184,6 +235,12 @@ export default class Wire {
       case ClientMessageType.StartTorrent:
         this.onMessageStartTorrent(data);
         break;
+
+      case ClientMessageType.SubscribeTE:
+        const hash = data.toString('hex', 0, 20);
+        const eventMask = data.readUInt8(20);
+
+        this.onMessageSubscribeTE(hash, eventMask);
     }
   }
 }

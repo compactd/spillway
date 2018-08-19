@@ -20,6 +20,7 @@ import * as getPort from 'get-port';
 import { toEqualBuffer } from './buffer';
 import { doesNotReject } from 'assert';
 import * as waitForExpect from 'wait-for-expect';
+import { EventEmitter } from 'events';
 
 function createTestSockets(
   wireInterface: IWireInterface,
@@ -107,7 +108,7 @@ function testImmediateResponse(
 }
 
 describe('0x01 - Handshake', () => {
-  it('should emit a success response', async () => {
+  it('should emit a failure response with parseToken throwing', async () => {
     const parseToken = jest.fn(() => {
       throw new Error('foomessage');
     });
@@ -129,7 +130,7 @@ describe('0x01 - Handshake', () => {
     expect(parseToken).toHaveBeenCalledWith('foobar');
   });
 
-  it('should emit a success response', async () => {
+  it('should emit a success response with parseToken returning object', async () => {
     const parseToken = jest.fn(() => {
       return { hi: '0.0.0.0', hn: 'localhost' };
     });
@@ -152,32 +153,32 @@ describe('0x01 - Handshake', () => {
   });
 });
 
-test('0x04 - start torrent', async () => {
+describe('0x04 - start torrent', () => {
   const wireInterface = {
     ...defaultInterface,
     startTorrent: jest.fn(),
   };
 
-  const { client, server, wire } = await createTestSockets(wireInterface);
-  wire.authenticated = true;
+  test('calls startTorrent', async () => {
+    const { client, server, wire } = await createTestSockets(wireInterface);
+    wire.authenticated = true;
 
-  client.write(
-    build(
-      uint16(420),
-      bufferLength(),
-      uint8(ClientMessageType.StartTorrent),
-      utf8String('barbar'),
-    ),
-  );
-
-  await waitForExpect(() => {
-    expect(wireInterface.startTorrent).toHaveBeenCalledWith(
-      Buffer.from('barbar'),
+    client.write(
+      build(
+        uint16(420),
+        bufferLength(),
+        uint8(ClientMessageType.StartTorrent),
+        utf8String('barbar'),
+      ),
     );
+    await waitForExpect(() => {
+      expect(wireInterface.startTorrent).toHaveBeenCalledWith(
+        Buffer.from('barbar'),
+      );
+    });
+    server.close();
+    client.destroy();
   });
-
-  server.close();
-  client.destroy();
 });
 
 describe('0x05 - subscribe to torrent specific events', () => {
@@ -195,7 +196,7 @@ describe('0x05 - subscribe to torrent specific events', () => {
     wire = test.wire;
     server = test.server;
     client = test.client;
-
+    wire.authenticated = true;
     client.write(
       build(
         uint16(420),
@@ -212,21 +213,32 @@ describe('0x05 - subscribe to torrent specific events', () => {
     client.destroy();
   });
 
-    expect(wireInterface.subscribeTE).toHaveBeenCalledWith(
-      hash,
-      TorrentEvent.TorrentPiece,
-      wire.onTorrentEvent,
-    );
-  it('calls subscribe', () => {
+  const byType: { [evt: number]: any } = {};
 
-    expect(wireInterface.subscribeTE).toHaveBeenCalledWith(
-      hash,
-      TorrentEvent.TorrentUpdate,
-      wire.onTorrentEvent,
+  it('calls subscribeTE for each event masked', async () => {
+    await waitForExpect(() => {
+      expect(wireInterface.subscribeTE).toHaveBeenCalledWith(
+        hash,
+        TorrentEvent.TorrentPiece,
+        expect.any(Function),
+      );
+
+      expect(wireInterface.subscribeTE).toHaveBeenCalledWith(
+        hash,
+        TorrentEvent.TorrentUpdate,
+        expect.any(Function),
+      );
+    });
+
+    Object.assign(
+      byType,
+      wireInterface.subscribeTE.mock.calls.reduce((acc, [info, evt, cb]) => {
+        return { ...acc, [evt]: cb };
+      }, {}),
     );
   });
 
-  it('callbacks propagate for piece', () => {
+  it('sends 0x10 packet with indexes when callback called', () => {
     client.on('data', (data: Buffer) => {
       expect(data).toEqualBuffer(
         build(
@@ -234,6 +246,7 @@ describe('0x05 - subscribe to torrent specific events', () => {
           bufferLength(),
           uint8(ServerMessageType.TorrentEvent),
           hexString(hash),
+          uint8(TorrentEvent.TorrentPiece),
           uint32(1),
           uint32(2),
           uint32(1337),
@@ -242,11 +255,11 @@ describe('0x05 - subscribe to torrent specific events', () => {
       done();
     });
 
-    wire.onTorrentEvent(hash, TorrentEvent.TorrentPiece, {
+    byType[TorrentEvent.TorrentPiece]({
       pieces: Uint32Array.from([1, 2, 1337]),
     });
   });
-  it('callbacks propagate for update', () => {
+  it('sends 0x10 packet with stats when callback called', () => {
     client.on('data', (data: Buffer) => {
       expect(data).toEqualBuffer(
         build(
@@ -254,15 +267,19 @@ describe('0x05 - subscribe to torrent specific events', () => {
           bufferLength(),
           uint8(ServerMessageType.TorrentEvent),
           hexString(hash),
-          uint32(1),
-          uint32(2),
-          uint32(1337),
+          uint8(TorrentEvent.TorrentUpdate),
+          uint8(2),
+          uint8(25),
+          uint32(42),
+          uint32(50),
+          uint32(3),
+          uint32(4),
         ),
       );
       done();
     });
 
-    wire.onTorrentEvent(hash, TorrentEvent.TorrentUpdate, {
+    byType[TorrentEvent.TorrentUpdate]({
       status: TorrentStatus.Downloading,
       peers: 25,
       downloaded: 42,
