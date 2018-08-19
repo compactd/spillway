@@ -117,18 +117,20 @@ export default class Wire {
           uploadSpeed,
         }) => {
           this.socket.write(
-            Buffer.concat([
-              Buffer.from(Uint8Array.from([TorrentEvent.TorrentUpdate])),
-              Buffer.from(Uint8Array.from([status, peers])),
-              Buffer.from(
-                Uint32Array.from([
-                  downloaded,
-                  uploaded,
-                  downloadSpeed,
-                  uploadSpeed,
-                ]).buffer,
-              ),
-            ]),
+            createMessage(
+              Buffer.concat([
+                Buffer.from(Uint8Array.from([TorrentEvent.TorrentUpdate])),
+                Buffer.from(Uint8Array.from([status, peers])),
+                Buffer.from(
+                  Uint32Array.from([
+                    downloaded,
+                    uploaded,
+                    downloadSpeed,
+                    uploadSpeed,
+                  ]).buffer,
+                ),
+              ]),
+            ),
           );
         },
       );
