@@ -217,8 +217,8 @@ describe.only('0x05 - subscribe to torrent specific events', () => {
   });
 
   const byType: { [evt: number]: any } = {};
-
-  it('calls subscribeTE for each event masked', async () => {
+  
+  it.only('calls subscribeTE for each event masked', async () => {
     await waitForExpect(() => {
       expect(wireInterface.subscribeTE).toHaveBeenCalledWith(
         hash,
