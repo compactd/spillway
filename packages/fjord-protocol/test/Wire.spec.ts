@@ -242,7 +242,7 @@ describe('0x05 - subscribe to torrent specific events', () => {
     );
   });
 
-  it('sends 0x10 packet with indexes when callback called', () => {
+  it('sends 0x10 packet with indexes when callback called', async () => {
     const cb = jest.fn();
     client.on('data', cb);
 
@@ -263,7 +263,7 @@ describe('0x05 - subscribe to torrent specific events', () => {
       )
     });
   });
-  it('sends 0x10 packet with stats when callback called', () => {
+  it('sends 0x10 packet with stats when callback called', async () => {
     const cb = jest.fn();
     client.on('data', cb);
 
