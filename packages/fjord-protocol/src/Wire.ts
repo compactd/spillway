@@ -76,6 +76,14 @@ export default class Wire {
     }
   }
 
+  onMessageStartTorrent(data: Buffer) {
+    if (!this.authenticated) {
+      return this.socket.destroy();
+    }
+
+    this.wireInterface.startTorrent(data);
+  }
+
   private writePiece(
     hash: string,
     index: number,
@@ -166,11 +174,15 @@ export default class Wire {
   onDataReceived(buffer: Buffer) {
     const { message, data } = readMessage(buffer);
 
-    debug('received %o: %d (%o)', buffer, message, data);
+    debug('received %d (%o)', message, data);
 
     switch (message) {
       case ClientMessageType.Handshake:
         this.onMessageHandshake(data.toString());
+        break;
+
+      case ClientMessageType.StartTorrent:
+        this.onMessageStartTorrent(data);
         break;
     }
   }
