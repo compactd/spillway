@@ -43,6 +43,7 @@ function createTestSockets(
       server.listen(port, () => {
         console.log(`Creating local server on port ${port}`);
         server.on('close', () => console.log(`Closed server at ${port}`));
+        client.on('close', () => console.log('closed socket', port));
         client.connect({
           host: 'localhost',
           port,
@@ -262,7 +263,8 @@ describe.only('0x05 - subscribe to torrent specific events', () => {
       pieces: Uint32Array.from([1, 2, 1337]),
     });
   });
-  it.skip('sends 0x10 packet with stats when callback called', () => {
+  it.only('sends 0x10 packet with stats when callback called', () => {
+    console.log('tests');
     client.on('data', (data: Buffer) => {
       expect(data).toEqualBuffer(
         build(
