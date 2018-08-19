@@ -218,7 +218,7 @@ describe.only('0x05 - subscribe to torrent specific events', () => {
 
   const byType: { [evt: number]: any } = {};
   
-  it.only('calls subscribeTE for each event masked', async () => {
+  it('calls subscribeTE for each event masked', async () => {
     await waitForExpect(() => {
       expect(wireInterface.subscribeTE).toHaveBeenCalledWith(
         hash,
@@ -262,7 +262,7 @@ describe.only('0x05 - subscribe to torrent specific events', () => {
       pieces: Uint32Array.from([1, 2, 1337]),
     });
   });
-  it('sends 0x10 packet with stats when callback called', () => {
+  it.skip('sends 0x10 packet with stats when callback called', () => {
     client.on('data', (data: Buffer) => {
       expect(data).toEqualBuffer(
         build(
