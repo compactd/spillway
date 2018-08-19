@@ -30,7 +30,7 @@ export function uint8(val: number) {
   };
 }
 
-export function uint16(val: number) {
+export function uint16(val: number): BufferPart {
   return {
     length: 2,
     write: (buff: Buffer, offset: number) => buff.writeUInt16BE(val, offset),
@@ -59,12 +59,20 @@ export function utf8String(val: string) {
   };
 }
 
-export type BufferPart = (
-  arg: any,
-) => {
+export function buffer(buff: Buffer) {
+  return {
+    length: buff.length,
+    write: (target: Buffer, offset: number) =>
+      buff.copy(target, offset) + offset,
+  };
+}
+
+export const hexString = (val: string) => buffer(Buffer.from(val, 'hex'));
+
+export interface BufferPart {
   length: number;
   write: (buffer: Buffer, offset: number, length: number) => number;
-};
+}
 
 export function build(...values: BufferPart[]) {
   const totalLength = values.reduce((sum, { length }) => sum + length, 0);

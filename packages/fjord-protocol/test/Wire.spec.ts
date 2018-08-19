@@ -1,6 +1,9 @@
 import Wire, { ServerMessageType, ClientMessageType } from '../src/Wire';
 import { Socket, createServer, Server } from 'net';
-import IWireInterface from '../src/WireInterface';
+import IWireInterface, {
+  TorrentEvent,
+  TorrentStatus,
+} from '../src/WireInterface';
 import {
   uint8,
   build,
@@ -8,10 +11,14 @@ import {
   utf8String,
   bufferLength,
   BufferPart,
+  hexString,
+  uint32,
 } from '../src/utils';
 import './buffer';
 
 import * as getPort from 'get-port';
+import { toEqualBuffer } from './buffer';
+import { doesNotReject } from 'assert';
 
 function createTestSockets(
   wireInterface: IWireInterface,
@@ -67,7 +74,7 @@ const defaultInterface: IWireInterface = {
   getFilesForTorrent: () => {
     throw new Error('Not impl');
   },
-  subscribeClient: () => {
+  subscribeTE: () => {
     throw new Error('Not impl');
   },
   startTorrent: () => {
@@ -141,5 +148,117 @@ describe('0x01 - Handshake', () => {
     );
 
     expect(parseToken).toHaveBeenCalledWith('foobar');
+  });
+});
+
+describe('0x04 - start torrent', async () => {
+  const wire = {
+    ...defaultInterface,
+    startTorrent: jest.fn(),
+  };
+
+  const { client, server } = await createTestSockets(wire);
+
+  client.write(
+    build(
+      uint16(420),
+      uint8(ClientMessageType.StartTorrent),
+      utf8String('barbar'),
+    ),
+  );
+
+  expect(wire.startTorrent).toHaveBeenCalledWith(Buffer.from('barbar'));
+
+  server.close();
+  client.destroy();
+});
+
+describe('0x05 - subscribe to torrent specific events', () => {
+  const wireInterface = {
+    ...defaultInterface,
+    subscribeTE: jest.fn(),
+  };
+
+  const hash = 'ddc691962b2dfdde74958ad4dd8bde859e476d33';
+
+  let wire: Wire, server: Server, client: Socket;
+
+  beforeAll(async () => {
+    const test = await createTestSockets(wireInterface);
+    wire = test.wire;
+    server = test.server;
+    client = test.client;
+
+    client.write(
+      build(
+        uint16(420),
+        uint8(ClientMessageType.SubscribeTE),
+        hexString(hash),
+        uint8(TorrentEvent.TorrentPiece | TorrentEvent.TorrentUpdate),
+      ),
+    );
+  });
+
+  afterAll(() => {
+    server.close();
+    client.destroy();
+  });
+
+  test('calls subscribe', () => {
+    expect(wireInterface.subscribeTE).toHaveBeenCalledWith(
+      hash,
+      TorrentEvent.TorrentPiece,
+      wire.onTorrentEvent,
+    );
+
+    expect(wireInterface.subscribeTE).toHaveBeenCalledWith(
+      hash,
+      TorrentEvent.TorrentUpdate,
+      wire.onTorrentEvent,
+    );
+  });
+
+  test('callbacks propagate for piece', () => {
+    client.on('data', (data: Buffer) => {
+      expect(data).toEqualBuffer(
+        build(
+          uint16(420),
+          uint8(ServerMessageType.TorrentEvent),
+          hexString(hash),
+          uint32(1),
+          uint32(2),
+          uint32(1337),
+        ),
+      );
+      done();
+    });
+
+    wire.onTorrentEvent(hash, TorrentEvent.TorrentPiece, {
+      pieces: Uint32Array.from([1, 2, 1337]),
+    });
+  });
+  test('callbacks propagate for update', () => {
+    client.on('data', (data: Buffer) => {
+      expect(data).toEqualBuffer(
+        build(
+          uint16(420),
+          uint8(ServerMessageType.TorrentEvent),
+          hexString(hash),
+          uint32(1),
+          uint32(2),
+          uint32(1337),
+        ),
+      );
+      done();
+    });
+
+    wire.onTorrentEvent(hash, TorrentEvent.TorrentUpdate, {
+      status: TorrentStatus.Downloading,
+      peers: 25,
+      downloaded: 42,
+      uploaded: 50,
+      downloadSpeed: 3,
+      uploadSpeed: 4,
+    });
   });
 });

@@ -1,14 +1,13 @@
 export enum TorrentEvent {
   TorrentUpdate = 0x02,
-  TorrentPiecesAvailable = 0x04,
-  TorrentPiece = 0x08,
+  TorrentPiece = 0x04,
 }
 
 export enum TorrentStatus {
-  Pending = 0x1,
-  Downloading = 0x2,
-  Seeding = 0x4,
-  Inactive = 0x8,
+  Pending = 0x01,
+  Downloading = 0x02,
+  Seeding = 0x04,
+  Inactive = 0x08,
   Paused = 0x10,
   Destroyed = 0x20,
 }
@@ -19,38 +18,45 @@ export default interface IWireInterface {
   getFilesForTorrent(
     infoHash: string,
   ): { offset: number; length: number; path: string }[];
+
+  /**
+   * Add to the client a torrrent and start it
+   * @param torrent the torrent buffer
+   */
   startTorrent(
     torrent: Buffer,
   ): {
     infoHash: string;
   };
-  subscribeClient(
+
+  /**
+   * Subscribes to torrent-relative events
+   * @param infoHash the torrent hash
+   * @param event the event name
+   * @param cb the event callback
+   */
+  subscribeTE(
     infoHash: string,
     event: TorrentEvent.TorrentUpdate,
     cb: (
-      {
-        status: TorrentStatus,
-        peers: number,
-        downloaded: number,
-        uploaded: number,
-        downloadSpeed: number,
-        uploadSpeed: number,
+      stats: {
+        status: TorrentStatus;
+        peers: number;
+        downloaded: number;
+        uploaded: number;
+        downloadSpeed: number;
+        uploadSpeed: number;
       },
     ) => void,
-  );
-  subscribeClient(
+  ): void;
+  subscribeTE(
     infoHash: string,
     event: TorrentEvent.TorrentPiecesAvailable,
-    cb: ({ pieces: UInt32Array }) => void,
-  );
-  subscribeClient(
-    infoHash: string,
-    event: TorrentEvent.TorrentPiecesAvailable,
-    cb: ({ pieces: UInt32Array }) => void,
-  );
-  subscribeClient(
+    cb: (data: { pieces: Uint32Array }) => void,
+  ): void;
+  subscribeTE(
     infoHash: string,
     event: TorrentEvent.TorrentPiece,
-    cb: ({ piece: Buffer }) => void,
-  );
+    cb: (data: { piece: Buffer }) => void,
+  ): void;
 }

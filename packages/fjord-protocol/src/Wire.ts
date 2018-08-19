@@ -48,6 +48,10 @@ export default class Wire {
     return this.authenticated && this.socket.writable;
   }
 
+  onTorrentEvent(hash: string, arg1: number, onTorrentEvent: any): any {
+    throw new Error('Method not implemented.');
+  }
+
   onMessageHandshake(token: string) {
     try {
       const { hi, hn } = this.wireInterface.parseToken(token);
