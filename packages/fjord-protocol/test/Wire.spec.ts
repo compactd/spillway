@@ -277,7 +277,8 @@ describe('0x05 - subscribe to torrent specific events', () => {
     });
     
     await waitForExpect(() => {
-      expect(cb).toHaveBeenCalledWith(build(
+      console.log(cb.mock)
+      expect(cb.mock.calls[0][0]).toEqualBuffer(build(
         uint16(420),
         bufferLength(),
         uint8(ServerMessageType.TorrentEvent),
