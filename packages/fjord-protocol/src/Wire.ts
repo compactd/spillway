@@ -1,5 +1,13 @@
 import { Socket } from 'net';
-import { readMessage, createMessage, build, uint8, uint32 } from './utils';
+import {
+  readMessage,
+  createMessage,
+  build,
+  uint8,
+  uint32,
+  hexString,
+  rawBuffer,
+} from './utils';
 import IWireInterface, { TorrentEvent } from './WireInterface';
 
 const debug = require('debug')('wire');
@@ -93,11 +101,11 @@ export default class Wire {
           this.socket.write(
             createMessage(
               ServerMessageType.TorrentEvent,
-              Buffer.concat([
-                Buffer.from(info, 'hex'),
-                Buffer.from(Uint8Array.of(TorrentEvent.TorrentPiece).buffer),
-                Buffer.from(pieces.buffer),
-              ]),
+              build(
+                hexString(info),
+                uint8(TorrentEvent.TorrentPiece),
+                rawBuffer(Buffer.from(pieces.buffer)),
+              ),
             ),
           );
         },
@@ -119,18 +127,11 @@ export default class Wire {
           this.socket.write(
             createMessage(
               ServerMessageType.TorrentEvent,
-              Buffer.concat([
-                Buffer.from(info, 'hex'),
-                Buffer.from(Uint8Array.of(TorrentEvent.TorrentUpdate, status, peers).buffer),
-                Buffer.from(
-                  Uint32Array.from([
-                    downloaded,
-                    uploaded,
-                    downloadSpeed,
-                    uploadSpeed,
-                  ]).buffer,
-                ),
-              ]),
+              build(
+                hexString(info),
+                uint8(TorrentEvent.TorrentUpdate, status, peers),
+                uint32(downloaded, uploaded, downloadSpeed, uploadSpeed),
+              ),
             ),
           );
         },
