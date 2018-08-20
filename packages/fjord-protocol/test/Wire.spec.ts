@@ -152,7 +152,7 @@ describe('0x01 - Handshake', () => {
     expect(parseToken).toHaveBeenCalledWith('foobar');
   });
   
-  it('should support spliced packets', async () => {
+  it('should support sliced packets', async () => {
     const parseToken = jest.fn(() => {
       return { hi: '0.0.0.0', hn: 'localhost' };
     });
@@ -171,9 +171,9 @@ describe('0x01 - Handshake', () => {
       utf8String('foobar'),
     );
     
-    client.write(buff.splice(0, 7));
+    client.write(buff.slice(0, 7));
 
-    const res = await writeAndWait(client, buff.splice(7));
+    const res = await writeAndWait(client, buff.slice(7));
 
     expect(res).toEqualBuffer(build(
       uint16(420),
