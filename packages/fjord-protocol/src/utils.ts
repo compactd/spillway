@@ -23,24 +23,27 @@ export function createMessage(message: MessageType, data: Buffer) {
   return Buffer.concat([buffer, data]);
 }
 
-export function uint8(val: number) {
+export function uint8(...val: number[]) {
   return {
-    length: 1,
-    write: (buff: Buffer, offset: number) => buff.writeUInt8(val, offset),
+    length: val.length,
+    write: (buff: Buffer, offset: number) =>
+      val.reduce((acc, value) => buff.writeUInt8(value, acc), offset),
   };
 }
 
-export function uint16(val: number): BufferPart {
+export function uint16(...val: number[]): BufferPart {
   return {
-    length: 2,
-    write: (buff: Buffer, offset: number) => buff.writeUInt16BE(val, offset),
+    length: val.length * 2,
+    write: (buff: Buffer, offset: number) =>
+      val.reduce((acc, value) => buff.writeUInt16BE(value, acc), offset),
   };
 }
 
-export function uint32(val: number) {
+export function uint32(...val: number[]) {
   return {
-    length: 4,
-    write: (buff: Buffer, offset: number) => buff.writeUInt32BE(val, offset),
+    length: 4 * val.length,
+    write: (buff: Buffer, offset: number) =>
+      val.reduce((acc, value) => buff.writeUInt32BE(value, acc), offset),
   };
 }
 
