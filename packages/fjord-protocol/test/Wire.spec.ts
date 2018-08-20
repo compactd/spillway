@@ -163,6 +163,7 @@ describe('0x01 - Handshake', () => {
     };
 
     const { client, server } = await createTestSockets(wire);
+    client.setNoDelay(true);
 
     const buff = build(
       uint16(420),
