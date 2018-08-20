@@ -66,6 +66,10 @@ function writeAndWait(socket: Socket, buffer: Buffer): Promise<Buffer> {
   });
 }
 
+function delay (ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+};
+
 const defaultInterface: IWireInterface = {
   parseToken: () => {
     throw new Error('Not impl');
@@ -173,6 +177,8 @@ describe('0x01 - Handshake', () => {
     );
     
     client.write(buff.slice(0, 7));
+    
+    await delay(500);
 
     const res = await writeAndWait(client, buff.slice(7));
 
