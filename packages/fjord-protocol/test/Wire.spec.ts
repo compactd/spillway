@@ -14,98 +14,12 @@ import {
   hexString,
   uint32,
 } from '../src/utils';
-import './buffer';
-
-import * as getPort from 'get-port';
-import { toEqualBuffer } from './buffer';
-import { doesNotReject } from 'assert';
-import * as waitForExpect from 'wait-for-expect';
-import { EventEmitter } from 'events';
-
-function createTestSockets(
-  wireInterface: IWireInterface,
-): Promise<{ wire: Wire; client: Socket; server: Server }> {
-  return new Promise((resolve, reject) => {
-    const client = new Socket();
-
-    const server = createServer(socket => {
-      resolve({
-        wire: new Wire(socket, wireInterface),
-        client,
-        server,
-      });
-    });
-    
-    client.setNoDelay(true);
-
-    getPort().then(port => {
-      server.listen(port, () => {
-        client.connect({
-          host: 'localhost',
-          port,
-        });
-      });
-    });
-  });
-}
-
-function writeAndWait(socket: Socket, buffer: Buffer): Promise<Buffer> {
-  return new Promise((resolve, reject) => {
-    let resolved = false;
-
-    socket.once('data', data => {
-      resolved = true;
-      resolve(data);
-    });
-
-    socket.write(buffer, () => {
-      setTimeout(() => {
-        if (!resolved) reject(new Error('writeAndWait timeout'));
-      }, 5000);
-    });
-  });
-}
-
-const defaultInterface: IWireInterface = {
-  parseToken: () => {
-    throw new Error('Not impl');
-  },
-  writeFilePiece: () => {
-    throw new Error('Not impl');
-  },
-  getFilesForTorrent: () => {
-    throw new Error('Not impl');
-  },
-  subscribeTE: () => {
-    throw new Error('Not impl');
-  },
-  startTorrent: () => {
-    throw new Error('Not impl');
-  },
-};
-
-function testImmediateResponse(
-  wireInterface: Partial<IWireInterface>,
-  ...parts: BufferPart[]
-) {
-  return {
-    with: async (...expected: BufferPart[]) => {
-      const wire = {
-        ...defaultInterface,
-        ...wireInterface,
-      };
-
-      const { client, server } = await createTestSockets(wire);
-
-      const res = await writeAndWait(client, build(...parts));
-
-      expect(res).toEqualBuffer(build(...expected));
-
-      server.close();
-      client.destroy();
-    },
-  };
-}
+import {
+  testImmediateResponse,
+  createTestSockets,
+  waitExpectations,
+  defaultInterface,
+} from './test-utils';
 
 describe('0x01 - Handshake', () => {
   it('should emit a failure response with parseToken throwing', async () => {
@@ -171,7 +85,7 @@ describe('0x04 - start torrent', () => {
         utf8String('barbar'),
       ),
     );
-    await waitForExpect(() => {
+    await waitExpectations(() => {
       expect(wireInterface.startTorrent).toHaveBeenCalledWith(
         Buffer.from('barbar'),
       );
@@ -214,9 +128,9 @@ describe('0x05 - subscribe to torrent specific events', () => {
   });
 
   const byType: { [evt: number]: any } = {};
-  
+
   it('calls subscribeTE for each event masked', async () => {
-    await waitForExpect(() => {
+    await waitExpectations(() => {
       expect(wireInterface.subscribeTE).toHaveBeenCalledWith(
         hash,
         TorrentEvent.TorrentPiece,
@@ -245,8 +159,8 @@ describe('0x05 - subscribe to torrent specific events', () => {
     byType[TorrentEvent.TorrentPiece]({
       pieces: Uint32Array.from([1, 2, 1337]),
     });
-    
-    await waitForExpect(() => {
+
+    await waitExpectations(() => {
       build(
         uint16(420),
         bufferLength(),
@@ -256,7 +170,7 @@ describe('0x05 - subscribe to torrent specific events', () => {
         uint32(1),
         uint32(2),
         uint32(1337),
-      )
+      );
     });
   });
   it('sends 0x10 packet with stats when callback called', async () => {
@@ -271,21 +185,23 @@ describe('0x05 - subscribe to torrent specific events', () => {
       downloadSpeed: 3,
       uploadSpeed: 4,
     });
-    
-    await waitForExpect(() => {
-      expect(cb.mock.calls[0][0]).toEqualBuffer(build(
-        uint16(420),
-        bufferLength(),
-        uint8(ServerMessageType.TorrentEvent),
-        hexString(hash),
-        uint8(TorrentEvent.TorrentUpdate),
-        uint8(2),
-        uint8(25),
-        uint32(42),
-        uint32(50),
-        uint32(3),
-        uint32(4),
-      ));
+
+    await waitExpectations(() => {
+      expect(cb.mock.calls[0][0]).toEqualBuffer(
+        build(
+          uint16(420),
+          bufferLength(),
+          uint8(ServerMessageType.TorrentEvent),
+          hexString(hash),
+          uint8(TorrentEvent.TorrentUpdate),
+          uint8(2),
+          uint8(25),
+          uint32(42),
+          uint32(50),
+          uint32(3),
+          uint32(4),
+        ),
+      );
     });
   });
 });

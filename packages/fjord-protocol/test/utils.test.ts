@@ -8,7 +8,7 @@ import {
   hexString,
 } from '../src/utils';
 import { readMessage, createMessage } from '../src/utils';
-import './buffer';
+import './test-utils';
 
 describe('readMessage', () => {
   test('should return type and data as buffer', () => {
