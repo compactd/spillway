@@ -39,6 +39,12 @@ export enum ServerEvent {
   ClientConnected = 0x02,
 }
 
+export enum TorrentCommand {
+  Pause = 0x0,
+  Destroy = 0x1,
+  Resume = 0x2,
+}
+
 export default class Wire {
   private _dataReceived = 0;
   private _totalData = 0;
@@ -136,6 +142,24 @@ export default class Wire {
           );
         },
       );
+    }
+  }
+
+  onMessageTorrentCommand(command: TorrentCommand, infoHash: string) {
+    switch (command) {
+      case TorrentCommand.Pause:
+        this.wireInterface.pauseTorrent(infoHash);
+        break;
+
+      case TorrentCommand.Resume:
+        this.wireInterface.resumeTorrent(infoHash);
+        break;
+      case TorrentCommand.Destroy:
+        this.wireInterface.destroyTorrent(infoHash);
+        break;
+      default:
+        debug('Invalid torrent command %d', command);
+        break;
     }
   }
 
@@ -245,6 +269,16 @@ export default class Wire {
         const eventMask = data.readUInt8(20);
 
         this.onMessageSubscribeTE(hash, eventMask);
+
+        break;
+
+      case ClientMessageType.TorrentCommand:
+        const cmd = data.readUInt8(0);
+        const info = data.slice(1).toString('hex');
+
+        this.onMessageTorrentCommand(cmd, info);
+
+        break;
     }
   }
 }

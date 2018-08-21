@@ -29,6 +29,10 @@ export default interface IWireInterface {
     infoHash: string;
   };
 
+  pauseTorrent(infoHash: string): {};
+  destroyTorrent(infoHash: string): {};
+  resumeTorrent(infoHash: string): {};
+
   /**
    * Subscribes to torrent-relative events
    * @param infoHash the torrent hash
