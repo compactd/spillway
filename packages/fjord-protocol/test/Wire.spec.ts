@@ -19,6 +19,8 @@ import {
   createTestSockets,
   waitExpectations,
   defaultInterface,
+  delay,
+  writeAndWait,
 } from './test-utils';
 
 describe('0x01 - Handshake', () => {
@@ -64,6 +66,46 @@ describe('0x01 - Handshake', () => {
     );
 
     expect(parseToken).toHaveBeenCalledWith('foobar');
+  });
+
+  it('should support sliced packets', async () => {
+    const parseToken = jest.fn(() => {
+      return { hi: '0.0.0.0', hn: 'localhost' };
+    });
+
+    const wire = {
+      ...defaultInterface,
+      parseToken,
+    };
+
+    const { client, server } = await createTestSockets(wire);
+    client.setNoDelay(true);
+
+    const buff = build(
+      uint16(420),
+      bufferLength(),
+      uint8(ClientMessageType.Handshake),
+      utf8String('foobar'),
+    );
+
+    client.write(buff.slice(0, 7));
+
+    await delay(500);
+
+    const res = await writeAndWait(client, buff.slice(7));
+
+    expect(res).toEqualBuffer(
+      build(
+        uint16(420),
+        bufferLength(),
+        uint8(ServerMessageType.HandshakeResponse),
+        uint8(1),
+        uint8(0),
+      ),
+    );
+
+    server.close();
+    client.destroy();
   });
 });
 

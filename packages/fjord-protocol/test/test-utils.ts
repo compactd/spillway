@@ -9,6 +9,10 @@ import { BufferPart, build } from '../src/utils';
 
 const { hexy } = require('hexy') as any;
 
+export function delay(ms: number) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 export function hexDump(buff: Buffer) {
   return hexy(buff) as string;
 }
