@@ -85,7 +85,7 @@ export const defaultInterface: IWireInterface = {
 
 export function testImmediateResponse(
   wireInterface: Partial<IWireInterface>,
-  ...parts: BufferPart[]
+  ...parts: BufferPart[] // tslint:disable-line
 ) {
   return {
     with: async (...expected: BufferPart[]) => {
