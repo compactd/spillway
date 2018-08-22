@@ -273,4 +273,46 @@ describe('0x07 - torrent commands', () => {
     server.close();
     client.destroy();
   });
+  test('calls destroyTorrent with infoHash', async () => {
+    const { client, server, wire } = await createTestSockets(wireInterface);
+    wire.authenticated = true;
+
+    client.write(
+      build(
+        uint16(420),
+        bufferLength(),
+        uint8(ClientMessageType.TorrentCommand, 0x02),
+        hexString('af60f433a698ee7a42da177a53eb59fcdcd74e42')
+      ),
+    );
+    
+    await waitExpectations(() => {
+      expect(wireInterface.destroyTorrent).toHaveBeenCalledWith(
+        'af60f433a698ee7a42da177a53eb59fcdcd74e42'
+      );
+    });
+    server.close();
+    client.destroy();
+  });
+  test('calls resumeTorrent with infoHash', async () => {
+    const { client, server, wire } = await createTestSockets(wireInterface);
+    wire.authenticated = true;
+
+    client.write(
+      build(
+        uint16(420),
+        bufferLength(),
+        uint8(ClientMessageType.TorrentCommand, 0x03),
+        hexString('af60f433a698ee7a42da177a53eb59fcdcd74e42')
+      ),
+    );
+    
+    await waitExpectations(() => {
+      expect(wireInterface.resumeTorrent).toHaveBeenCalledWith(
+        'af60f433a698ee7a42da177a53eb59fcdcd74e42'
+      );
+    });
+    server.close();
+    client.destroy();
+  });
 });
