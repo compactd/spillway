@@ -241,3 +241,37 @@ describe('0x05 - subscribe to torrent specific events', () => {
     });
   });
 });
+
+
+
+describe('0x07 - torrent commands', () => {
+  const wireInterface = {
+    ...defaultInterface,
+    pauseTorrent: jest.fn(),
+    resumeTorrent: jest.fn(),
+    destroyTorrent: jest.fn(),
+  };
+
+  test('calls pauseTorrent with infoHash', async () => {
+    const { client, server, wire } = await createTestSockets(wireInterface);
+    wire.authenticated = true;
+
+    client.write(
+      build(
+        uint16(420),
+        bufferLength(),
+        uint8(ClientMessageType.TorrentCommand),
+        uint(0x01),
+        'af60f433a698ee7a42da177a53eb59fcdcd74e42'
+      ),
+    );
+    
+    await waitExpectations(() => {
+      expect(wireInterface.pauseTorrent).toHaveBeenCalledWith(
+        'af60f433a698ee7a42da177a53eb59fcdcd74e42'
+      );
+    });
+    server.close();
+    client.destroy();
+  });
+});
