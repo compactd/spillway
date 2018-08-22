@@ -40,9 +40,9 @@ export enum ServerEvent {
 }
 
 export enum TorrentCommand {
-  Pause = 0x0,
-  Destroy = 0x1,
-  Resume = 0x2,
+  Pause = 0x1,
+  Destroy = 0x2,
+  Resume = 0x3,
 }
 
 export default class Wire {
