@@ -261,7 +261,7 @@ describe('0x07 - torrent commands', () => {
         uint16(420),
         bufferLength(),
         uint8(ClientMessageType.TorrentCommand, 0x01),
-        'af60f433a698ee7a42da177a53eb59fcdcd74e42'
+        utf8String('af60f433a698ee7a42da177a53eb59fcdcd74e42')
       ),
     );
     
