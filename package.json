@@ -6,7 +6,7 @@
     "format": "prettier --write \"packages/**/*.ts\"",
     "test": "jest",
     "test:cov": "jest --coverage",
-    "test:ci": "jest --coverage || (DEBUG=*; jest; false)",
+    "test:ci": "jest --coverage || (DEBUG=* jest; false)",
     "postinstall": "lerna bootstrap"
   },
   "devDependencies": {
