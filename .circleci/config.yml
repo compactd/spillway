@@ -31,5 +31,5 @@ jobs:
 
       # run tests!
       - run: npm run lint
-      - run: npm run test:cov
+      - run: npm run test:ci
       - run: bash <(curl -s https://codecov.io/bash)
