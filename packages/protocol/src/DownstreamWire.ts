@@ -14,6 +14,10 @@ export default class DownstreamWire extends EE<SpillwayProtocolEvents> {
     super();
   }
 
+  close() {
+    this.socket.disconnect();
+  }
+
   setState(state: SocketState) {
     this.state = socketStateMachine(this.state, state);
   }
@@ -31,9 +35,6 @@ export default class DownstreamWire extends EE<SpillwayProtocolEvents> {
     });
     this.on('resume_torrent', torrent => {
       this.socket.emit('resume_torrent', torrent);
-    });
-    this.on('remove_torrent', torrent => {
-      this.socket.emit('remove_torrent', torrent);
     });
     this.on('remove_torrent', torrent => {
       this.socket.emit('remove_torrent', torrent);
