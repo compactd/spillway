@@ -66,4 +66,34 @@ describe('Up/Down stream wire', () => {
       });
     });
   });
+
+  test('subscribe_to without pieceState', async () => {
+    client.on('torrent_state_update', listener);
+    client.emit('subscribe_to', {
+      infoHash: 'foo',
+      piecesState: false,
+    });
+    await delay(250);
+    server.emit('torrent_state_update', {
+      infoHash: 'foo',
+      state: 'STATE' as any,
+    });
+    await waitExpectations(() => {
+      expect(listener).toHaveBeenCalledWith({
+        infoHash: 'foo',
+        state: 'STATE' as any,
+      });
+    });
+
+    listener.mockClear();
+
+    server.emit('torrent_state_update', {
+      infoHash: 'foobar',
+      state: 'STATE' as any,
+    });
+
+    await delay(250);
+
+    expect(listener).toHaveBeenCalledTimes(0);
+  });
 });

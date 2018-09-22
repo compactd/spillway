@@ -45,6 +45,9 @@ export default class DownstreamWire extends EE<SpillwayProtocolEvents> {
     this.on('subscribe_to', evt => {
       this.socket.emit('subscribe_to', evt);
     });
+    this.socket.on('torrent_state_update', evt => {
+      this.emit('torrent_state_update', evt);
+    });
     this.on('download_piece', piece => {
       this.setState(SocketState.TransmittingData);
       this.socket.on('piece_received', pieceData => {
