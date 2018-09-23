@@ -1,17 +1,26 @@
 import { EventEmitter as EE } from 'ee-ts';
 import {
-  SpillwayProtocolEvents,
   SocketState,
   socketStateMachine,
+  IDownstream,
+  EventKey,
+  AppEvent,
+  EventIn,
+  TorrentEvent,
+  IPiece,
 } from './definitions';
-import { TorrentPropsTransform, TorrentPieceTransform } from './transforms';
 
 const debug = require('debug')('wire');
 
-export default class DownstreamWire extends EE<SpillwayProtocolEvents> {
+export default class DownstreamWire implements IDownstream {
   private state: SocketState = SocketState.Ready;
-  constructor(private socket: SocketIO.Socket) {
-    super();
+  constructor(private socket: SocketIOClient.Socket) {
+    socket.on('disconnect', () => {
+      this.setState(SocketState.Closed);
+    });
+    socket.on('error', () => {
+      this.setState(SocketState.Errored);
+    });
   }
 
   close() {
@@ -26,39 +35,50 @@ export default class DownstreamWire extends EE<SpillwayProtocolEvents> {
     return this.state === SocketState.Ready;
   }
 
-  setupListeners() {
-    this.on('add_torrent', torrent => {
-      this.socket.emit('add_torrent', torrent);
-    });
-    this.on('pause_torrent', torrent => {
-      this.socket.emit('pause_torrent', torrent);
-    });
-    this.on('resume_torrent', torrent => {
-      this.socket.emit('resume_torrent', torrent);
-    });
-    this.on('remove_torrent', torrent => {
-      this.socket.emit('remove_torrent', torrent);
-    });
-    this.socket.on('torrent_added', props => {
-      this.emit('torrent_added', TorrentPropsTransform.decode(props));
-    });
-    this.on('subscribe_to', evt => {
-      this.socket.emit('subscribe_to', evt);
-    });
-    this.socket.on('torrent_state_update', evt => {
-      this.emit('torrent_state_update', evt);
-    });
-    this.socket.on('piece_available', evt => {
-      this.emit('piece_available', evt);
-    });
-    this.on('download_piece', piece => {
-      this.setState(SocketState.TransmittingData);
-      this.socket.once('piece_received', pieceData => {
-        const decoded = TorrentPieceTransform.decode(pieceData);
+  async addTorrent(content: Buffer) {
+    return this.emitAndCallback('add_torrent', content);
+  }
 
-        this.emit('piece_received', decoded);
+  async getState() {
+    return this.emitAndCallback('get_state');
+  }
+
+  async getPiece(infoHash: string, index: number): Promise<IPiece> {
+    return this.emitAndCallback('get_piece', { infoHash, index });
+  }
+
+  handleAppEvent<K extends EventKey<AppEvent>>(
+    name: K,
+    callback: ((data: EventIn<AppEvent, K>) => {}),
+  ) {
+    this.socket.on(`app_event_${name}`, callback);
+    this.socket.emit('sub_to_app_event', { name });
+  }
+
+  handleTorrentEvent<K extends EventKey<TorrentEvent>>(
+    infoHash: string,
+    name: K,
+    callback: ((data: EventIn<TorrentEvent, K>) => {}),
+  ): void {
+    this.socket.on(`${infoHash.slice(0, 7)}_event_${name}`, callback);
+    this.socket.emit('sub_to_torrent_event', { infoHash, name });
+  }
+
+  private emitAndCallback(fn: string, payload?: any): Promise<any> {
+    this.setState(SocketState.TransmittingData);
+
+    const id = Math.random()
+      .toString(16)
+      .slice(2);
+    return new Promise(resolve => {
+      this.socket.once('fcallback_' + id, ({ data }: any) => {
+        this.setState(SocketState.Ready);
+        resolve(data);
       });
-      this.socket.emit('download_piece', piece);
+      this.socket.emit('fcall_' + fn, {
+        cb: id,
+        payload,
+      });
     });
   }
 }

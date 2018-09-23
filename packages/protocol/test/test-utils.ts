@@ -4,6 +4,7 @@ import * as Client from 'socket.io-client';
 
 import UpstreamWire from '../src/UpstreamWire';
 import DownstreamWire from '../src/DownstreamWire';
+import { IClient } from '../src/definitions';
 
 const waitForExpect = require('wait-for-expect');
 
@@ -11,7 +12,9 @@ export function delay(ms: number) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-export function createTestWires(): Promise<{
+export function createTestWires(
+  cl: Partial<IClient>,
+): Promise<{
   client: DownstreamWire;
   server: UpstreamWire;
   close: () => void;
@@ -22,7 +25,7 @@ export function createTestWires(): Promise<{
       const client = Client(`localhost:${port}`);
       server.on('connect', socket => {
         resolve({
-          server: new UpstreamWire(socket),
+          server: new UpstreamWire(socket, cl as IClient),
           client: new DownstreamWire(client as any),
           close: server.close,
         });

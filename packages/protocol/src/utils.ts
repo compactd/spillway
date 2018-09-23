@@ -1,70 +1,47 @@
-import { equal } from 'assert';
+import 'reflect-metadata';
 
-export function uint8(...val: number[]) {
-  return {
-    length: val.length,
-    write: (buff: Buffer, offset: number) =>
-      val.reduce((acc, value) => buff.writeUInt8(value, acc), offset),
+export function FunctionHandler(fn?: string) {
+  return (target: any, keyName: string, descriptor: PropertyDescriptor) => {
+    const value = descriptor.value || (descriptor.get || (() => undefined))();
+    if (!value) {
+      throw new Error('Undefined value');
+    }
+
+    Reflect.defineMetadata(
+      'custom:oninit',
+      (instance: any) => {
+        instance.socket.on(
+          'fcall_' + (fn || keyName),
+          async ({ cb, payload }: { cb: string; payload: any }) => {
+            const res = await value.call(instance, payload);
+            instance.socket.emit(`fcallback_` + cb, { data: res });
+          },
+        );
+      },
+      descriptor.value,
+    );
   };
 }
 
-export function uint16(...val: number[]): BufferPart {
-  return {
-    length: val.length * 2,
-    write: (buff: Buffer, offset: number) =>
-      val.reduce((acc, value) => buff.writeUInt16BE(value, acc), offset),
+export function EventHandler(fn?: string) {
+  return <T extends { socket: SocketIO.Socket }>(
+    target: T,
+    keyName: string,
+    descriptor: PropertyDescriptor,
+  ) => {
+    const value = descriptor.value || (descriptor.get || (() => undefined))();
+    if (!value) {
+      throw new Error('Undefined value');
+    }
+
+    Reflect.defineMetadata(
+      'custom:oninit',
+      (instance: any) => {
+        instance.socket.on(fn || keyName, data => {
+          value(data);
+        });
+      },
+      descriptor.value,
+    );
   };
-}
-
-export function uint32(...val: number[]) {
-  return {
-    length: 4 * val.length,
-    write: (buff: Buffer, offset: number) =>
-      val.reduce((acc, value) => buff.writeUInt32BE(value, acc), offset),
-  };
-}
-
-export function bufferLength() {
-  return {
-    length: 4,
-    write: (buff: Buffer, offset: number, length: number) =>
-      buff.writeUInt32BE(length, offset),
-  };
-}
-
-export function utf8String(val: string) {
-  return {
-    length: Buffer.byteLength(val),
-    write: (buff: Buffer, offset: number) => buff.write(val, offset) + offset,
-  };
-}
-
-export function rawBuffer(buff: Buffer) {
-  return {
-    length: buff.length,
-    write: (target: Buffer, offset: number) =>
-      buff.copy(target, offset) + offset,
-  };
-}
-
-export const hexString = (val: string) => rawBuffer(Buffer.from(val, 'hex'));
-
-export interface BufferPart {
-  length: number;
-  write: (buffer: Buffer, offset: number, length: number) => number;
-}
-
-export function build(...values: BufferPart[]) {
-  const totalLength = values.reduce((sum, { length }) => sum + length, 0);
-  const buffer = Buffer.alloc(totalLength);
-
-  const written = values.reduce((offset, { write }) => {
-    const i = write(buffer, offset, totalLength);
-
-    return i;
-  }, 0);
-
-  equal(written, totalLength);
-
-  return buffer;
 }

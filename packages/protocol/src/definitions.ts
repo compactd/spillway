@@ -27,22 +27,45 @@ export interface TorrentState {
 
 export interface SpillwayProtocolEvents {
   torrent_added: (props: TorrentProperties) => void;
-  add_torrent: (torrent: Buffer) => void;
-  resume_torrent: (infoHash: string) => void;
-  pause_torrent: (infoHash: string) => void;
-  remove_torrent: (infoHash: string) => void;
-  subscribe_to: (data: { infoHash: string; piecesState: boolean }) => void;
-  torrent_state_update: (
-    evt: { infoHash: string; state: TorrentState },
-  ) => void;
-  piece_available: (data: { infoHash: string; pieces: number[] }) => void;
-  download_piece: (data: { infoHash: string; pieceIndex: number }) => void;
-  piece_received: (
-    piece: {
-      infoHash: string;
-      index: number;
-      content: Buffer;
+}
+
+export interface TorrentEvent {
+  state_updated: (state: TorrentState) => void;
+  piece_available: (
+    data: {
+      pieceIndex: number;
     },
+  ) => void;
+}
+
+export interface IUpstream {
+  syncTorrent: (id: string) => Promise<void>;
+}
+
+export interface IPiece {
+  content: Buffer;
+  index: number;
+  offset: number;
+}
+
+export interface IDownstream {
+  addTorrent: (content: Buffer) => Promise<void>;
+  getState: () => Promise<(TorrentProperties & TorrentState)[]>;
+  getPiece: (infoHash: string, index: number) => Promise<IPiece>;
+}
+
+export interface IClient {
+  addTorrent: (content: Buffer) => void;
+  getState: () => (TorrentState & TorrentProperties)[];
+  getPiece: (id: string, index: number) => IPiece;
+  onAppEvent: <K extends EventKey<AppEvent>>(
+    name: K,
+    callback: ((data: EventIn<AppEvent, K>) => void),
+  ) => void;
+  onTorrentEvent: <K extends EventKey<TorrentEvent>>(
+    infoHash: string,
+    name: K,
+    callback: ((data: EventIn<TorrentEvent, K>) => void),
   ) => void;
 }
 

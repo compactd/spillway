@@ -1,17 +1,29 @@
-import { EventEmitter as EE } from 'ee-ts';
 import {
-  SpillwayProtocolEvents,
   SocketState,
   socketStateMachine,
+  IUpstream,
+  IClient,
+  AppEvent,
+  TorrentEvent,
 } from './definitions';
-import { TorrentPropsTransform, TorrentPieceTransform } from './transforms';
+import { FunctionHandler, EventHandler } from './utils';
+import 'reflect-metadata';
 
 const debug = require('debug')('wire');
 
-export default class UpstreamWire extends EE<SpillwayProtocolEvents> {
-  private state: SocketState = SocketState.Ready;
-  constructor(private socket: SocketIO.Socket) {
-    super();
+export default class UpstreamWire {
+  state: SocketState = SocketState.Ready;
+  readonly socket: SocketIO.Socket;
+  public static init?: (socket: SocketIO.Socket) => {};
+
+  constructor(socket: SocketIO.Socket, private client: IClient) {
+    this.socket = socket;
+
+    Object.getOwnPropertyNames(UpstreamWire.prototype).forEach(name => {
+      (Reflect.getMetadata('custom:oninit', (this as any)[name]) || (() => {}))(
+        this,
+      );
+    });
   }
 
   setState(state: SocketState) {
@@ -22,47 +34,40 @@ export default class UpstreamWire extends EE<SpillwayProtocolEvents> {
     return this.state === SocketState.Ready;
   }
 
-  setupListeners() {
-    this.socket.on('add_torrent', torrent => {
-      this.emit('add_torrent', torrent);
-    });
-    this.socket.on('pause_torrent', torrent => {
-      this.emit('pause_torrent', torrent);
-    });
-    this.socket.on('resume_torrent', torrent => {
-      this.emit('resume_torrent', torrent);
-    });
-    this.socket.on('remove_torrent', torrent => {
-      this.emit('remove_torrent', torrent);
-    });
-    this.socket.on('remove_torrent', torrent => {
-      this.emit('remove_torrent', torrent);
-    });
-    this.on('torrent_added', props => {
-      this.socket.emit('torrent_added', TorrentPropsTransform.decode(props));
-    });
-    this.socket.on('subscribe_to', ({ infoHash, piecesState }) => {
-      this.on('torrent_state_update', data => {
-        if (data.infoHash === infoHash) {
-          this.socket.emit('torrent_state_update', data);
-        }
-      });
-      if (piecesState) {
-        this.on('piece_available', data => {
-          if (data.infoHash === infoHash) {
-            this.socket.emit('piece_available', data);
-          }
-        });
-      }
-    });
-    this.socket.on('download_piece', piece => {
-      this.setState(SocketState.TransmittingData);
-      this.one('piece_received', pieceData => {
-        const encoded = TorrentPieceTransform.encode(pieceData);
+  setup() {}
 
-        this.socket.emit('piece_received', encoded);
-      });
-      this.emit('download_piece', piece);
+  @FunctionHandler('add_torrent')
+  addTorrent(buffer: Buffer) {
+    this.client.addTorrent(buffer);
+  }
+
+  @FunctionHandler('get_state')
+  getState() {
+    return this.client.getState();
+  }
+
+  @FunctionHandler('get_piece')
+  getPiece({ infoHash, index }: { infoHash: string; index: number }) {
+    return this.client.getPiece(infoHash, index);
+  }
+
+  @EventHandler('sub_to_app_event')
+  subscribeToAppEvent({ name }: { name: keyof AppEvent }) {
+    this.client.onAppEvent(name, (data: any) => {
+      this.socket.emit(`app_event_${name}`, data);
+    });
+  }
+
+  @EventHandler('sub_to_torrent_event')
+  subscribeToTorrentEvent({
+    name,
+    infoHash,
+  }: {
+    name: keyof TorrentEvent;
+    infoHash: string;
+  }) {
+    this.client.onTorrentEvent(infoHash, name, (data: any) => {
+      this.socket.emit(`${infoHash.slice(0, 7)}_event_${name}`, data);
     });
   }
 }
