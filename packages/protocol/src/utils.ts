@@ -37,8 +37,8 @@ export function EventHandler(fn?: string) {
     Reflect.defineMetadata(
       'custom:oninit',
       (instance: any) => {
-        instance.socket.on(fn || keyName, data => {
-          value(data);
+        instance.socket.on(fn || keyName, (data: any) => {
+          value.call(instance, data);
         });
       },
       descriptor.value,

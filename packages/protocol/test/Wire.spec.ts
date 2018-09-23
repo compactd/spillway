@@ -39,4 +39,59 @@ describe('Up/Down stream wire', () => {
     expect(state).toEqual(['foo']);
     socket.close();
   });
+
+  test('handleAppEvent', async () => {
+    let callback: (args: any) => {};
+
+    const onAppEvent = jest.fn((name, cb) => {
+      expect(name).toBe('torrent_added');
+      callback = cb;
+    });
+
+    const handler = jest.fn();
+    const { client, server, socket } = await createTestWires({ onAppEvent });
+
+    client.handleAppEvent('torrent_added', handler);
+
+    await waitExpectations(() => {
+      expect(onAppEvent).toHaveBeenCalledTimes(1);
+    });
+
+    callback('foobar');
+
+    await waitExpectations(() => {
+      expect(handler).toHaveBeenCalledWith('foobar');
+    });
+
+    socket.close();
+  });
+
+  test('handleTorrentEvent', async () => {
+    let callback: (args: any) => {};
+
+    const onTorrentEvent = jest.fn((hash, name, cb) => {
+      expect(name).toBe('state_updated');
+      expect(hash).toBe('foo');
+      callback = cb;
+    });
+
+    const handler = jest.fn();
+    const { client, server, socket } = await createTestWires({
+      onTorrentEvent,
+    });
+
+    client.handleTorrentEvent('foo', 'state_updated', handler);
+
+    await waitExpectations(() => {
+      expect(onTorrentEvent).toHaveBeenCalledTimes(1);
+    });
+
+    callback('foobar');
+
+    await waitExpectations(() => {
+      expect(handler).toHaveBeenCalledWith('foobar');
+    });
+
+    socket.close();
+  });
 });
