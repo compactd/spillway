@@ -25,7 +25,15 @@ export interface TorrentState {
   downSpeed: number;
 }
 
-export interface SpillwayProtocolEvents {
+export type Filter<T, Cond, U extends keyof T = keyof T> = {
+  [K in U]: T[K] extends Cond ? K : never
+}[U];
+export type EventKey<T> = Filter<T, (...args: any[]) => any> & string;
+export type In<T> = T extends (...args: infer U) => any ? U : [];
+export type Id<T> = T;
+export type EventIn<T, K extends EventKey<T>> = Id<In<T[K]>>;
+
+export interface AppEvent {
   torrent_added: (props: TorrentProperties) => void;
 }
 
