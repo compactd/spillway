@@ -17,7 +17,7 @@ export function createTestWires(
 ): Promise<{
   client: DownstreamWire;
   server: UpstreamWire;
-  close: () => void;
+  socket: SocketIO.Server;
 }> {
   return new Promise(resolve => {
     getPort().then(port => {
@@ -27,7 +27,7 @@ export function createTestWires(
         resolve({
           server: new UpstreamWire(socket, cl as IClient),
           client: new DownstreamWire(client as any),
-          close: server.close,
+          socket: server,
         });
       });
       server.listen(port);
