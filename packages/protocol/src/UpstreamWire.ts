@@ -57,7 +57,7 @@ export default class UpstreamWire extends EE<SpillwayProtocolEvents> {
     });
     this.socket.on('download_piece', piece => {
       this.setState(SocketState.TransmittingData);
-      this.on('piece_received', pieceData => {
+      this.one('piece_received', pieceData => {
         const encoded = TorrentPieceTransform.encode(pieceData);
 
         this.socket.emit('piece_received', encoded);

@@ -148,4 +148,40 @@ describe('Up/Down stream wire', () => {
 
     expect(listener).toHaveBeenCalledTimes(0);
   });
+
+  test('download_piece', async () => {
+    const downloadPiece = jest.fn();
+    const pieceReceived = jest.fn();
+
+    server.on('download_piece', downloadPiece);
+    client.on('piece_received', pieceReceived);
+
+    client.emit('download_piece', {
+      infoHash: 'ddc691962b2dfdde74958ad4dd8bde859e476d33',
+      pieceIndex: 420,
+    });
+
+    await waitExpectations(() => {
+      expect(downloadPiece).toHaveBeenCalledWith({
+        infoHash: 'ddc691962b2dfdde74958ad4dd8bde859e476d33',
+        pieceIndex: 420,
+      });
+
+      expect(client.isReady()).toBeFalsy();
+    });
+
+    server.emit('piece_received', {
+      infoHash: 'ddc691962b2dfdde74958ad4dd8bde859e476d33',
+      index: 420,
+      content: Buffer.alloc(2),
+    });
+
+    await waitExpectations(() => {
+      expect(pieceReceived).toHaveBeenCalledWith({
+        infoHash: 'ddc691962b2dfdde74958ad4dd8bde859e476d33',
+        index: 420,
+        content: Buffer.alloc(2),
+      });
+    });
+  });
 });
