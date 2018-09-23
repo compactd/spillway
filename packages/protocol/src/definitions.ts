@@ -68,12 +68,12 @@ export interface IClient {
   getPiece: (id: string, index: number) => IPiece;
   onAppEvent: <K extends EventKey<AppEvent>>(
     name: K,
-    callback: ((data: EventIn<AppEvent, K>) => void),
+    callback: ((...args: EventIn<AppEvent, K>) => void),
   ) => void;
   onTorrentEvent: <K extends EventKey<TorrentEvent>>(
     infoHash: string,
     name: K,
-    callback: ((data: EventIn<TorrentEvent, K>) => void),
+    callback: ((...args: EventIn<TorrentEvent, K>) => void),
   ) => void;
 }
 

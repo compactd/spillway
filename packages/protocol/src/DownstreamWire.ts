@@ -49,7 +49,7 @@ export default class DownstreamWire implements IDownstream {
 
   handleAppEvent<K extends EventKey<AppEvent>>(
     name: K,
-    callback: ((data: EventIn<AppEvent, K>) => {}),
+    callback: ((...args: EventIn<AppEvent, K>) => void),
   ) {
     this.socket.on(`app_event_${name}`, callback);
     this.socket.emit('sub_to_app_event', { name });
@@ -58,7 +58,7 @@ export default class DownstreamWire implements IDownstream {
   handleTorrentEvent<K extends EventKey<TorrentEvent>>(
     infoHash: string,
     name: K,
-    callback: ((data: EventIn<TorrentEvent, K>) => {}),
+    callback: ((...args: EventIn<TorrentEvent, K>) => void),
   ): void {
     this.socket.on(`${infoHash.slice(0, 7)}_event_${name}`, callback);
     this.socket.emit('sub_to_torrent_event', { infoHash, name });
