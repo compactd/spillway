@@ -96,4 +96,56 @@ describe('Up/Down stream wire', () => {
 
     expect(listener).toHaveBeenCalledTimes(0);
   });
+
+  test('subscribe_to with pieceState', async () => {
+    const pieceAvailable = jest.fn();
+
+    client.on('torrent_state_update', listener);
+    client.on('piece_available', pieceAvailable);
+
+    client.emit('subscribe_to', {
+      infoHash: 'foo',
+      piecesState: true,
+    });
+
+    await delay(250);
+
+    server.emit('torrent_state_update', {
+      infoHash: 'foo',
+      state: 'STATE' as any,
+    });
+
+    server.emit('piece_available', {
+      infoHash: 'bar',
+      pieces: [42],
+    });
+
+    server.emit('piece_available', {
+      infoHash: 'foo',
+      pieces: [4, 2, 0],
+    });
+
+    await waitExpectations(() => {
+      expect(listener).toHaveBeenCalledWith({
+        infoHash: 'foo',
+        state: 'STATE' as any,
+      });
+      expect(pieceAvailable).toHaveBeenCalledWith({
+        infoHash: 'foo',
+        pieces: [4, 2, 0],
+      });
+      expect(pieceAvailable).toHaveBeenCalledTimes(1);
+    });
+
+    listener.mockClear();
+
+    server.emit('torrent_state_update', {
+      infoHash: 'foobar',
+      state: 'STATE' as any,
+    });
+
+    await delay(250);
+
+    expect(listener).toHaveBeenCalledTimes(0);
+  });
 });
