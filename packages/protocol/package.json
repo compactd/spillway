@@ -12,7 +12,7 @@
     "socket.io": "^2.1.1"
   },
   "devDependencies": {
-    "@spillway/client": "^1.0.0",
+    "@spillway/torrent-client": "^1.0.0",
     "@types/get-port": "^4.0.0",
     "@types/socket.io": "^1.4.38",
     "@types/socket.io-client": "^1.4.32",
