@@ -1,7 +1,6 @@
 import DownstreamWire from './DownstreamWire';
-import * as io from 'socket.io-client';
-import { IClient, AppEvent } from './definitions';
 import { EventEmitter } from 'ee-ts';
+import { AppEvent, IClient } from '@spillway/torrent-client';
 
 export default class WirePool extends EventEmitter<AppEvent> {
   private wires: DownstreamWire[];
@@ -14,7 +13,7 @@ export default class WirePool extends EventEmitter<AppEvent> {
       target: string;
       client: IClient;
     },
-    private WireFactory = (target: string) => new DownstreamWire(io(target)),
+    private WireFactory: (target: string) => DownstreamWire,
   ) {
     super();
     this.wires = new Array(opts.maxConnections);

@@ -8,9 +8,7 @@
   },
   "author": "vinz243",
   "license": "MIT",
-  "dependencies": {
-    "socket.io": "^2.1.1"
-  },
+  "dependencies": {},
   "devDependencies": {
     "@spillway/torrent-client": "^1.0.0",
     "@types/get-port": "^4.0.0",
