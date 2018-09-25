@@ -15,7 +15,7 @@ import { compare, Operation } from 'fast-json-patch';
 
 const FSChunkStore = require('fs-chunk-store');
 
-export default class TorrentClient implements Promised<IClient> {
+export default class TorrentClient implements IClient {
   static DEFAULT_POLLING_INTERVAL = 200;
   private eventEmitter: EventEmitter;
   private oldState: { [hash: string]: TorrentState & TorrentProperties } = {};
@@ -52,7 +52,7 @@ export default class TorrentClient implements Promised<IClient> {
   destroy() {
     this.client.destroy();
   }
-  async getState() {
+  getState() {
     return this.client.torrents.map(torrent => {
       return {
         infoHash: torrent.infoHash,
@@ -69,10 +69,10 @@ export default class TorrentClient implements Promised<IClient> {
     });
   }
 
-  async getIndexedState(): Promise<{
+  getIndexedState(): {
     [hash: string]: TorrentState & TorrentProperties;
-  }> {
-    return (await this.getState()).reduce((acc, torrent) => {
+  } {
+    return this.getState().reduce((acc, torrent) => {
       return { ...acc, [torrent.infoHash]: torrent };
     }, {});
   }
@@ -88,9 +88,9 @@ export default class TorrentClient implements Promised<IClient> {
     // this.eventEmitter.on('activity', () =>)
   }
 
-  async compareAndEmitState() {
+  compareAndEmitState() {
     if (this.eventEmitter.listeners('state_diff').length > 0) {
-      const current = await this.getIndexedState();
+      const current = this.getIndexedState();
       const diff = compare(this.oldState, current);
 
       if (diff.length > 0) {
@@ -120,7 +120,7 @@ export default class TorrentClient implements Promised<IClient> {
   async onAppEvent<K extends keyof AppEvent>(
     name: K,
     callback: (...args: In<AppEvent[K]>) => void,
-  ): Promise<void> {
+  ) {
     switch (name) {
       case 'torrent_added':
         this.eventEmitter.on('torrent_added', callback as any);
@@ -137,7 +137,7 @@ export default class TorrentClient implements Promised<IClient> {
     infoHash: string,
     name: K,
     callback: (...args: In<TorrentEvent[K]>) => void,
-  ): Promise<void> {
+  ) {
     if (name === 'piece_available') {
       this.eventEmitter.on('piece_' + infoHash, ({ index }) => {
         callback({ pieceIndex: index });

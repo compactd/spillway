@@ -1,4 +1,4 @@
-import { Diff, Operation } from 'fast-json-patch';
+import { Operation } from 'fast-json-patch';
 
 /**
  * Describes a torrent indendantly from its state
@@ -85,7 +85,7 @@ export interface TorrentEvent {
 export interface IClient {
   addTorrent: (content: Buffer) => void;
   getState: () => (TorrentState & TorrentProperties)[];
-  getPiece: (id: string, index: number) => IPiece;
+  getPiece: (id: string, index: number) => Promise<IPiece>;
   onAppEvent: <K extends EventKey<AppEvent>>(
     name: K,
     callback: ((...args: EventIn<AppEvent, K>) => void),
