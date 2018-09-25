@@ -8,6 +8,8 @@ const waitForExpect = require('wait-for-expect') as (
 
 describe('TorrentClient', () => {
   const client = new TorrentClient();
+  const torrentAdded = jest.fn();
+  const stateDiff = jest.fn();
 
   beforeAll(async () => {
     rmfr('/tmp/webtorrent');
@@ -15,6 +17,11 @@ describe('TorrentClient', () => {
 
   afterAll(() => {
     client.destroy();
+  });
+
+  test('subscribe for app event', async () => {
+    client.onAppEvent('torrent_added', torrentAdded);
+    client.onAppEvent('state_diff', stateDiff);
   });
 
   test('add a torrent', async () => {
@@ -34,7 +41,35 @@ describe('TorrentClient', () => {
     });
   });
 
+  test('called torrentAdded and stateDiff', async () => {
+    await waitForExpect(() => {
+      expect(torrentAdded).toHaveBeenCalledTimes(1);
+      expect(stateDiff).toHaveBeenCalled();
+    });
+    expect(torrentAdded).toHaveBeenCalledWith(
+      '3b1d85f8780ef8c4d8538f809a7a63fc5299318e',
+    );
+    expect(stateDiff.mock.calls[0]).toMatchObject([
+      [
+        {
+          op: 'add',
+          path: '/3b1d85f8780ef8c4d8538f809a7a63fc5299318e',
+          value: expect.any(Object),
+        },
+      ],
+    ]);
+  });
+
   const callback = jest.fn();
+  const torrentDiff = jest.fn();
+
+  test('subscribe for torrent state diff', async () => {
+    client.onTorrentEvent(
+      '3b1d85f8780ef8c4d8538f809a7a63fc5299318e',
+      'state_updated',
+      torrentDiff,
+    );
+  });
 
   test('wait for a piece', async () => {
     client.onTorrentEvent(
@@ -55,5 +90,11 @@ describe('TorrentClient', () => {
     );
     expect(piece.index).toBe(pieceIndex);
     expect(piece.content.length).toBe(262144);
+  });
+
+  test('torrentDiff was called', async () => {
+    await waitForExpect(() => {
+      expect(torrentDiff).toHaveBeenCalledTimes(2);
+    });
   });
 });

@@ -6,16 +6,22 @@ import {
   TorrentStatus,
   Promised,
   IPiece,
+  TorrentProperties,
+  TorrentState,
 } from './definitions';
 import * as WebTorrent from 'webtorrent';
 import { EventEmitter } from 'events';
+import { compare, Operation } from 'fast-json-patch';
 
 const FSChunkStore = require('fs-chunk-store');
 
 export default class TorrentClient implements Promised<IClient> {
+  static DEFAULT_POLLING_INTERVAL = 200;
   private eventEmitter: EventEmitter;
+  private oldState: { [hash: string]: TorrentState & TorrentProperties } = {};
   constructor(private client = new WebTorrent()) {
     this.eventEmitter = new EventEmitter();
+    this.listenToStateDiff();
   }
 
   addTorrent(content: Buffer): Promise<void> {
@@ -36,6 +42,7 @@ export default class TorrentClient implements Promised<IClient> {
         },
         torrent => {
           infoHash = torrent.infoHash;
+          this.eventEmitter.emit('torrent_added', infoHash);
           resolve();
         },
       );
@@ -57,8 +64,41 @@ export default class TorrentClient implements Promised<IClient> {
         upSpeed: torrent.uploadSpeed,
         downSpeed: torrent.downloadSpeed,
         eta: torrent.timeRemaining,
+        size: (torrent as any).length,
       };
     });
+  }
+
+  async getIndexedState(): Promise<{
+    [hash: string]: TorrentState & TorrentProperties;
+  }> {
+    return (await this.getState()).reduce((acc, torrent) => {
+      return { ...acc, [torrent.infoHash]: torrent };
+    }, {});
+  }
+
+  async listenToStateDiff() {
+    this.oldState = await this.getIndexedState();
+
+    setInterval(
+      this.compareAndEmitState.bind(this),
+      TorrentClient.DEFAULT_POLLING_INTERVAL,
+    );
+
+    // this.eventEmitter.on('activity', () =>)
+  }
+
+  async compareAndEmitState() {
+    if (this.eventEmitter.listeners('state_diff').length > 0) {
+      const current = await this.getIndexedState();
+      const diff = compare(this.oldState, current);
+
+      if (diff.length > 0) {
+        this.eventEmitter.emit('state_diff', diff);
+
+        this.oldState = current;
+      }
+    }
   }
 
   getPiece(id: string, index: number): Promise<IPiece> {
@@ -77,10 +117,21 @@ export default class TorrentClient implements Promised<IClient> {
       });
     });
   }
-  async onAppEvent<K extends 'torrent_added'>(
+  async onAppEvent<K extends keyof AppEvent>(
     name: K,
     callback: (...args: In<AppEvent[K]>) => void,
-  ): Promise<void> {}
+  ): Promise<void> {
+    switch (name) {
+      case 'torrent_added':
+        this.eventEmitter.on('torrent_added', callback as any);
+
+        return;
+      case 'state_diff':
+        this.eventEmitter.on('state_diff', callback as any);
+
+        return;
+    }
+  }
 
   async onTorrentEvent<K extends 'state_updated' | 'piece_available'>(
     infoHash: string,
@@ -90,6 +141,16 @@ export default class TorrentClient implements Promised<IClient> {
     if (name === 'piece_available') {
       this.eventEmitter.on('piece_' + infoHash, ({ index }) => {
         callback({ pieceIndex: index });
+      });
+    } else if (name === 'state_updated') {
+      this.eventEmitter.on('state_diff', (diff: Operation[]) => {
+        const torrentDiffs = diff.filter(op =>
+          op.path.startsWith('/' + infoHash),
+        );
+
+        if (torrentDiffs.length > 0) {
+          callback(torrentDiffs);
+        }
       });
     }
   }

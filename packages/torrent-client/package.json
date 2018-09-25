@@ -9,6 +9,7 @@
   "author": "vinz243",
   "license": "MIT",
   "dependencies": {
+    "fast-json-patch": "^2.0.7",
     "fs-chunk-store": "^1.7.0",
     "webtorrent": "^0.102.4"
   },

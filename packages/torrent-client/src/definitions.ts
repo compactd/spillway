@@ -1,3 +1,5 @@
+import { Diff, Operation } from 'fast-json-patch';
+
 /**
  * Describes a torrent indendantly from its state
  */
@@ -39,6 +41,7 @@ export type Promised<T> = {
 export interface TorrentProperties {
   infoHash: string;
   name: string;
+  size: number;
 }
 
 export enum TorrentStatus {
@@ -67,10 +70,11 @@ export interface TorrentState {
 
 export interface AppEvent {
   torrent_added: (props: TorrentProperties) => void;
+  state_diff: (diff: Operation[]) => void;
 }
 
 export interface TorrentEvent {
-  state_updated: (state: TorrentState) => void;
+  state_updated: (stateDiff: Operation[]) => void;
   piece_available: (
     data: {
       pieceIndex: number;
