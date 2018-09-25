@@ -1,13 +1,7 @@
-import {
-  SocketState,
-  socketStateMachine,
-  IUpstream,
-  IClient,
-  AppEvent,
-  TorrentEvent,
-} from './definitions';
+import { SocketState, socketStateMachine } from './definitions';
 import { FunctionHandler, EventHandler } from './utils';
 import 'reflect-metadata';
+import { IClient, AppEvent, TorrentEvent } from '@spillway/torrent-client';
 
 const debug = require('debug')('wire');
 

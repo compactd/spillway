@@ -1,14 +1,11 @@
-import { EventEmitter as EE } from 'ee-ts';
+import { SocketState, socketStateMachine, IDownstream } from './definitions';
 import {
-  SocketState,
-  socketStateMachine,
-  IDownstream,
+  IPiece,
   EventKey,
   AppEvent,
   EventIn,
   TorrentEvent,
-  IPiece,
-} from './definitions';
+} from '@spillway/torrent-client';
 
 const debug = require('debug')('wire');
 
