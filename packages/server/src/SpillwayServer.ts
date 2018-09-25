@@ -9,13 +9,13 @@ export default class SpillwayServer {
     name: string;
     id: string;
   }[] = [];
-  private client = new TorrentClient();
 
   constructor(
     private opts: {
       port: number;
       secret: string;
     },
+    private client = new TorrentClient(),
   ) {}
 
   listen() {
