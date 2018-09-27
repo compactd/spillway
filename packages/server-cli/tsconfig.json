@@ -10,6 +10,10 @@
     "composite": true
   },
   "include": [
-    "src/**/*"
+    "src/**/*",
+    "bin/bin.js",
+    "bin.js",
+    "../torrent-client/bin.js",
+    "../server/index.d.ts"
   ]
 }

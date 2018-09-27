@@ -2,6 +2,7 @@ import * as socketIO from 'socket.io';
 import * as jwtAuth from 'socketio-jwt-auth';
 import { TorrentClient } from '@spillway/torrent-client';
 import { UpstreamWire } from '@spillway/protocol';
+import { log } from './logger';
 
 export default class SpillwayServer {
   private io?: socketIO.Server;
@@ -20,7 +21,10 @@ export default class SpillwayServer {
 
   listen() {
     this.io = socketIO({ port: this.opts.port });
-
+    this.io.use((req, next) => {
+      log('app %O', req);
+      next();
+    });
     this.io.use(
       jwtAuth.authenticate(
         {

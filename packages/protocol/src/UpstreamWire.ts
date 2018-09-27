@@ -3,7 +3,7 @@ import { FunctionHandler, EventHandler } from './utils';
 import 'reflect-metadata';
 import { IClient, AppEvent, TorrentEvent } from '@spillway/torrent-client';
 
-const debug = require('debug')('wire');
+// const debug = require('debug')('wire');
 
 export default class UpstreamWire {
   state: SocketState = SocketState.Ready;

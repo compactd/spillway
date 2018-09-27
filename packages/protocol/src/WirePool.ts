@@ -1,6 +1,7 @@
 import DownstreamWire from './DownstreamWire';
 import { EventEmitter } from 'ee-ts';
-import { AppEvent, IClient } from '@spillway/torrent-client';
+import { AppEvent } from '@spillway/torrent-client';
+import { log } from './logger';
 
 export default class WirePool extends EventEmitter<AppEvent> {
   private wires: DownstreamWire[];
@@ -11,7 +12,6 @@ export default class WirePool extends EventEmitter<AppEvent> {
     private opts: {
       maxConnections: number;
       target: string;
-      client: IClient;
     },
     private WireFactory: (target: string) => DownstreamWire,
   ) {
@@ -65,6 +65,7 @@ export default class WirePool extends EventEmitter<AppEvent> {
     const wire = this.wires[cursor];
 
     if (!wire) {
+      log('creating new wire at %d', cursor);
       this.wires[cursor] = this.WireFactory(this.opts.target);
 
       return this.wires[cursor];

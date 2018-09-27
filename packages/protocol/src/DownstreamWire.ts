@@ -6,16 +6,19 @@ import {
   EventIn,
   TorrentEvent,
 } from '@spillway/torrent-client';
+import { log, warn } from './logger';
 
-const debug = require('debug')('wire');
+// const debug = require('debug')('wire');
 
 export default class DownstreamWire implements IDownstream {
   private state: SocketState = SocketState.Ready;
-  constructor(private socket: SocketIOClient.Socket) {
+  constructor(private socket: SocketIO.Socket) {
     socket.on('disconnect', () => {
+      log('%s: socket disconnected', socket.id);
       this.setState(SocketState.Closed);
     });
-    socket.on('error', () => {
+    socket.on('error', err => {
+      warn('%s: socket error: %O', socket.id, err);
       this.setState(SocketState.Errored);
     });
   }
@@ -33,6 +36,7 @@ export default class DownstreamWire implements IDownstream {
   }
 
   async addTorrent(content: Buffer) {
+    log('adding torrent %o', content);
     return this.emitAndCallback('add_torrent', content);
   }
 
@@ -48,7 +52,8 @@ export default class DownstreamWire implements IDownstream {
     name: K,
     callback: ((...args: EventIn<AppEvent, K>) => void),
   ) {
-    this.socket.on(`app_event_${name}`, callback);
+    log('subscribing to %s', name);
+    this.socket.on(`app_event_${name}`, callback as any);
     this.socket.emit('sub_to_app_event', { name });
   }
 
@@ -57,7 +62,8 @@ export default class DownstreamWire implements IDownstream {
     name: K,
     callback: ((...args: EventIn<TorrentEvent, K>) => void),
   ): void {
-    this.socket.on(`${infoHash.slice(0, 7)}_event_${name}`, callback);
+    log('subscribing to %s#%s', infoHash, name);
+    this.socket.on(`${infoHash.slice(0, 7)}_event_${name}`, callback as any);
     this.socket.emit('sub_to_torrent_event', { infoHash, name });
   }
 

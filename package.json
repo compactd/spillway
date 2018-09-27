@@ -24,6 +24,8 @@
     "wait-for-expect": "^1.0.0"
   },
   "dependencies": {
+    "@types/debug": "0.0.30",
+    "debug": "^4.0.1",
     "ee-ts": "^0.1.4",
     "reflect-metadata": "^0.1.12",
     "socket.io": "^2.1.1"
