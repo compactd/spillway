@@ -1,1 +1,1 @@
-export { default as Config } from './src/FS';
+export { default as FSTorrentStorage } from './src/FSTorrentStorage';
