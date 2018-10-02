@@ -115,18 +115,39 @@ export default class Torrents extends Command {
         const totalSize = length || 1;
         let done = 0;
 
-        pool.retrieveTorrent(infoHash, async (index, offset, piece) => {
-          await store.put(index, piece);
-
-          done += piece.length;
+        const tickBar = (l: number) => {
+          done += l;
           bar.tick({
             curr: `       ${prettyBytes(done)}`.slice(-7),
             tot: `       ${prettyBytes(totalSize)}`.slice(-7),
             srate: prettyBytes((1000 * done) / (Date.now() - time + 1)),
           });
-        });
+        };
 
-        pool.addTorrent(content);
+        const onPiece = async (index: number, _: any, piece: Buffer) => {
+          await store.put(index, piece);
+          tickBar(piece.length);
+        };
+
+        pool.retrieveTorrent(infoHash, store.has.bind(store), onPiece);
+
+        const state = await pool.getState();
+        if (!state.find(el => el.infoHash === infoHash)) {
+          pool.addTorrent(content);
+        } else {
+          const avPieces = await pool.getAvailablePieces(infoHash);
+          await Promise.all(
+            avPieces.map(async p => {
+              if (!(await store.has(p))) {
+                const piece = await pool.getPiece(infoHash, p);
+
+                onPiece(p, null, piece.content);
+              } else {
+                tickBar(pieceLength);
+              }
+            }),
+          );
+        }
 
         return;
     }
