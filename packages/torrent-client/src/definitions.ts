@@ -69,7 +69,7 @@ export interface TorrentState {
 }
 
 export interface AppEvent {
-  torrent_added: (props: TorrentProperties) => void;
+  torrent_added: (props: string) => void;
   state_diff: (diff: Operation[]) => void;
 }
 
@@ -95,4 +95,5 @@ export interface IClient {
     name: K,
     callback: ((...args: EventIn<TorrentEvent, K>) => void),
   ) => void;
+  getAvailablePieces: (id: string) => Promise<number[]>;
 }

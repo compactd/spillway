@@ -51,6 +51,25 @@ export default class TorrentClient implements IClient {
   destroy() {
     this.client.destroy();
   }
+
+  async getAvailablePieces(infoHash: string) {
+    const torrent = this.client.torrents.find(el => el.infoHash === infoHash);
+
+    if (!torrent) {
+      return [];
+    }
+
+    const pieces = [];
+
+    for (let i = 0; i < (torrent as any).bitfield.buffer.length * 8; i++) {
+      if ((torrent as any).bitfield.get(i)) {
+        pieces.push(i);
+      }
+    }
+
+    return pieces;
+  }
+
   getState() {
     return this.client.torrents.map(torrent => {
       return {
