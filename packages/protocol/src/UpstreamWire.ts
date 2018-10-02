@@ -47,7 +47,6 @@ export default class UpstreamWire {
 
   @FunctionHandler('get_pieces_state')
   getPiecesState({ infoHash }: { infoHash: string }) {
-    console.log('get_pieces_state', infoHash);
     return this.client.getAvailablePieces(infoHash);
   }
 
