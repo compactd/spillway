@@ -1,5 +1,5 @@
 {
-  "name": "@spillway/storage",
+  "name": "@spillway/integrity",
   "version": "1.0.0",
   "description": "Spillway storage implementation",
   "main": "index.js",
