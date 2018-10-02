@@ -8,7 +8,7 @@ const pmkdir = promisify(mkdir);
 
 const store = new FSTorrentStorage({
   pieceLength: 3,
-  length: 5,
+  length: 13,
   path: '/tmp/fstest',
   files: [
     {

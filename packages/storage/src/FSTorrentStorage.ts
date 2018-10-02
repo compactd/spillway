@@ -14,6 +14,9 @@ export default class FSTorrentStorage implements ITorrentStorage {
   private fdTable: {
     [index: number]: number;
   } = {};
+  private lastPieceLength = this.opts.length % this.opts.pieceLength;
+  private numberOfPieces =
+    (this.opts.length - this.lastPieceLength) / this.opts.pieceLength + 1;
   constructor(
     private opts: {
       pieceLength: number;
@@ -31,7 +34,9 @@ export default class FSTorrentStorage implements ITorrentStorage {
   async put(index: number, content: Buffer): Promise<void> {
     const { pieceLength } = this.opts;
     const pieceStart = pieceLength * index;
-    const pieceEnd = pieceLength * (index + 1);
+    const pieceEnd =
+      pieceStart +
+      (index !== this.numberOfPieces - 1 ? pieceLength : this.lastPieceLength);
 
     log('put(%d): offset %d-%d', index, pieceStart, pieceEnd);
 
@@ -39,11 +44,10 @@ export default class FSTorrentStorage implements ITorrentStorage {
       this.opts.files
         .filter(({ length, offset }) => {
           const eof = offset + length;
-
           return (
             (offset >= pieceStart && offset < pieceEnd) ||
             (eof >= pieceStart && eof < pieceEnd) ||
-            (offset <= pieceStart && eof > pieceEnd)
+            (offset <= pieceStart && eof >= pieceEnd)
           );
         })
         .map(async ({ path, offset, length }) => {
@@ -75,7 +79,9 @@ export default class FSTorrentStorage implements ITorrentStorage {
   async get(index: number): Promise<Buffer> {
     const { pieceLength } = this.opts;
     const pieceStart = pieceLength * index;
-    const pieceEnd = pieceLength * (index + 1);
+    const pieceEnd =
+      pieceStart +
+      (index !== this.numberOfPieces - 1 ? pieceLength : this.lastPieceLength);
 
     const chunks = await Promise.all(
       this.opts.files
@@ -85,7 +91,7 @@ export default class FSTorrentStorage implements ITorrentStorage {
           return (
             (offset >= pieceStart && offset < pieceEnd) ||
             (eof >= pieceStart && eof < pieceEnd) ||
-            (offset <= pieceStart && eof > pieceEnd)
+            (offset <= pieceStart && eof >= pieceEnd)
           );
         })
         .map(async ({ length, offset, path }) => {
