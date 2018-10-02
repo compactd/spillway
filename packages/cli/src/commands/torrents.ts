@@ -1,6 +1,8 @@
 import { Command, flags as Flags } from '@oclif/command';
 import { Config } from '@spillway/config';
 import { WirePool, DownstreamWire } from '@spillway/protocol';
+import { withIntegrity, AsyncIntegrityProvider } from '@spillway/integrity';
+import { FSTorrentStorage } from '@spillway/storage';
 import * as io from 'socket.io-client';
 import * as parseTorrent from 'parse-torrent';
 import { promisify } from 'util';
@@ -10,6 +12,11 @@ import { join } from 'path';
 import * as prettyBytes from 'pretty-bytes';
 
 const FSChunkStore = require('fs-chunk-store');
+
+const Store = withIntegrity(
+  FSTorrentStorage,
+  AsyncIntegrityProvider.checkIntegrity,
+);
 
 export default class Torrents extends Command {
   static description = 'Generate various token for the server';
@@ -67,36 +74,55 @@ export default class Torrents extends Command {
           content,
         ) as parseTorrent.Instance;
 
-        if (!infoHash) return;
+        if (!infoHash || !pieceLength || !length || !files || !pieces) return;
 
         const bar = new ProgressBar('  [:bar] :curr/:tot :srate/s eta: :etas', {
           total: (pieces || []).length,
           width: 20,
         });
 
-        const store = new FSChunkStore(pieceLength, {
-          files: (files || []).map(file =>
-            Object.assign({}, file, {
-              path: join(process.cwd(), file.path),
-            }),
-          ),
+        const store = new Store({
+          pieceLength,
+          length,
+          path: process.cwd(),
+          files,
+        });
+
+        store.setPieces(pieces);
+
+        process.on('exit', async () => {
+          await store.close();
+        });
+
+        // catch ctrl+c event and exit normally
+        process.on('SIGINT', async () => {
+          await store.close();
+          process.exit(2);
+        });
+
+        // catch uncaught exceptions, trace, then exit normally
+        process.on('uncaughtException', async () => {
+          await store.close();
+          process.exit(99);
+        });
+
+        store.waitUntilDownloaded().then(async () => {
+          await store.close();
+          process.exit(0);
         });
 
         const time = Date.now();
         const totalSize = length || 1;
         let done = 0;
 
-        pool.retrieveTorrent(infoHash, (index, offset, piece) => {
-          store.put(index, piece, (err: any) => {
-            if (err) {
-              this.log(err);
-            }
-            done += piece.length;
-            bar.tick({
-              curr: `       ${prettyBytes(done)}`.slice(-7),
-              tot: `       ${prettyBytes(totalSize)}`.slice(-7),
-              srate: prettyBytes((1000 * done) / (Date.now() - time + 1)),
-            });
+        pool.retrieveTorrent(infoHash, async (index, offset, piece) => {
+          await store.put(index, piece);
+
+          done += piece.length;
+          bar.tick({
+            curr: `       ${prettyBytes(done)}`.slice(-7),
+            tot: `       ${prettyBytes(totalSize)}`.slice(-7),
+            srate: prettyBytes((1000 * done) / (Date.now() - time + 1)),
           });
         });
 
