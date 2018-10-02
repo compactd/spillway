@@ -8,7 +8,10 @@
   },
   "author": "vinz243",
   "license": "MIT",
-  "dependencies": {},
+  "dependencies": {
+    "@types/generic-pool": "^3.1.4",
+    "generic-pool": "^3.4.2"
+  },
   "devDependencies": {
     "@spillway/torrent-client": "^1.0.0",
     "@types/get-port": "^4.0.0",

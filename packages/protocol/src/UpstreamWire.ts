@@ -45,6 +45,12 @@ export default class UpstreamWire {
     return this.client.getPiece(infoHash, index);
   }
 
+  @FunctionHandler('get_pieces_state')
+  getPiecesState({ infoHash }: { infoHash: string }) {
+    console.log('get_pieces_state', infoHash);
+    return this.client.getAvailablePieces(infoHash);
+  }
+
   @EventHandler('sub_to_app_event')
   subscribeToAppEvent({ name }: { name: keyof AppEvent }) {
     this.client.onAppEvent(name, (data: any) => {
