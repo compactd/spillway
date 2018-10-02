@@ -1,0 +1,17 @@
+{
+  "name": "@spillway/storage",
+  "version": "1.0.0",
+  "description": "Spillway storage implementation",
+  "main": "index.js",
+  "scripts": {
+    "test": "jest"
+  },
+  "author": "vinz243",
+  "license": "MIT",
+  "dependencies": {
+    "@ronomon/crypto-async": "^3.0.0"
+  },
+  "devDependencies": {
+    "@types/hasha": "^3.0.0"
+  }
+}
