@@ -1,10 +1,11 @@
 import { Command, flags as Flags } from '@oclif/command';
 import { promisify } from 'util';
-import { mkdir } from 'fs';
+import * as fs from 'fs';
 import { Config as ServerConfig } from '@spillway/config';
 import { randomBytes } from 'crypto';
 
 export default class Config extends Command {
+  static fs = fs;
   static description = 'Edit configuration fr the server';
 
   static examples = [
@@ -33,10 +34,9 @@ export default class Config extends Command {
 
   async run() {
     const { args, flags } = this.parse(Config);
-
     const config = new ServerConfig();
     try {
-      await promisify(mkdir)(config.getPath());
+      await promisify(fs.mkdir)(config.getPath());
     } catch {}
 
     switch (args.op) {
@@ -44,7 +44,7 @@ export default class Config extends Command {
         if (args.key === 'secret') {
           const secret = args.value || randomBytes(512).toString('base64');
 
-          await config.setSecret(secret);
+          await config.setSecret(secret, Config.fs);
 
           if (!args.value) {
             this.log(
