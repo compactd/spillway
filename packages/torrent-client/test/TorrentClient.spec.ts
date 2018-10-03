@@ -4,6 +4,7 @@ import * as rmfr from 'rmfr';
 
 const waitForExpect = require('wait-for-expect') as (
   fn: () => void,
+  timeout?: number,
 ) => Promise<void>;
 
 describe('TorrentClient', () => {
@@ -108,8 +109,9 @@ describe('TorrentClient', () => {
   });
 
   test('torrentDiff was called', async () => {
+    jest.setTimeout(10000);
     await waitForExpect(() => {
       expect(torrentDiff).toHaveBeenCalledTimes(2);
-    });
+    }, 10000);
   });
 });

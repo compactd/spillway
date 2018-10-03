@@ -52,8 +52,12 @@ export default class Config extends Command {
             this.log(
               '\n  Successfully generated a 512 bits token and saved to config',
             );
+
+            return;
           } else {
             this.log('\n  Successfully written value to config');
+
+            return;
           }
         }
     }

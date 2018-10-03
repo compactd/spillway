@@ -11,7 +11,8 @@ describe('config', async () => {
   afterEach(() => {});
 
   it('should write 512 random bytes to secret if no value', async () => {
-    jest.setTimeout(10000);
+    jest.setTimeout(30000);
+
     const writeFile = jest.fn((_, __, ___, cb) => process.nextTick(cb));
     const readFile = jest.fn((_, cb) => process.nextTick(cb));
     const mkdir = jest.fn((_, cb) => process.nextTick(cb));
