@@ -93,6 +93,20 @@ describe('TorrentClient', () => {
     expect(piece.content.length).toBe(262144);
   });
 
+  test('this piece is available', async () => {
+    const [[{ pieceIndex }]] = callback.mock.calls;
+
+    const pieces = await client.getAvailablePieces(
+      '3b1d85f8780ef8c4d8538f809a7a63fc5299318e',
+    );
+
+    expect(pieces).toContain(pieceIndex);
+  });
+
+  test('client returns empty piece list with non existing torrent', async () => {
+    expect(await client.getAvailablePieces('foobar')).toEqual([]);
+  });
+
   test('torrentDiff was called', async () => {
     await waitForExpect(() => {
       expect(torrentDiff).toHaveBeenCalledTimes(2);
