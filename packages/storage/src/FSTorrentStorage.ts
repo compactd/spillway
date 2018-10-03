@@ -17,6 +17,7 @@ export default class FSTorrentStorage implements ITorrentStorage {
   private lastPieceLength = this.opts.length % this.opts.pieceLength;
   private numberOfPieces =
     (this.opts.length - this.lastPieceLength) / this.opts.pieceLength + 1;
+
   constructor(
     private opts: {
       pieceLength: number;
@@ -25,12 +26,7 @@ export default class FSTorrentStorage implements ITorrentStorage {
       files: { path: string; offset: number; length: number }[];
     },
   ) {}
-  downloaded(): Promise<void> {
-    throw new Error('Method not implemented.');
-  }
-  isDone(): boolean {
-    throw new Error('Method not implemented.');
-  }
+
   async put(index: number, content: Buffer): Promise<void> {
     const { pieceLength } = this.opts;
     const pieceStart = pieceLength * index;
