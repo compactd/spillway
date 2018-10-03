@@ -6,12 +6,19 @@ import * as fs from 'fs';
 export default class Config {
   constructor(private configPath = join(homedir(), '.spillway')) {}
 
+  async ensureSetup({ mkdir } = { mkdir: fs.mkdir }) {
+    try {
+      await promisify(mkdir)(join(homedir(), '.spillway'));
+    } catch {}
+  }
+
   async addRemote(
     name: string,
     target: string,
     token: string,
     { mkdir, writeFile } = fs,
   ) {
+    await this.ensureSetup({ mkdir });
     const dir = join(this.configPath, 'remotes');
     try {
       await promisify(mkdir)(dir);
@@ -24,7 +31,8 @@ export default class Config {
     );
   }
 
-  async getRemote(name: string, { readFile } = fs) {
+  async getRemote(name: string, { readFile, mkdir } = fs) {
+    await this.ensureSetup({ mkdir });
     const dir = join(this.configPath, 'remotes');
 
     const data = await promisify(readFile)(join(dir, name));
@@ -38,8 +46,9 @@ export default class Config {
     return promisify(readFile)(join(this.configPath, 'secret'), 'utf-8');
   }
 
-  setSecret(secret: string, { writeFile } = fs) {
-    return promisify(writeFile)(
+  async setSecret(secret: string, { mkdir, writeFile } = fs) {
+    await this.ensureSetup({ mkdir });
+    await promisify(writeFile)(
       join(this.configPath, 'secret'),
       secret,
       'utf-8',
