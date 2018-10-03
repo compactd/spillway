@@ -11,7 +11,7 @@ describe('SpillwayServer', () => {
   const addTorrent = jest.fn();
   const server = new SpillwayServer(
     {
-      port: 5979,
+      port: 59420,
       secret: 'foobar',
     },
     { addTorrent } as any,
@@ -27,7 +27,7 @@ describe('SpillwayServer', () => {
   test('refuses to connect with invalid token', async () => {
     const onerror = jest.fn();
     const onsuccess = jest.fn();
-    const socket = io('http://localhost:5979', {
+    const socket = io('http://localhost:59420', {
       query: 'auth_token=FOOBAR',
     });
 
@@ -48,7 +48,7 @@ describe('SpillwayServer', () => {
   test('connect with valid token', async () => {
     const onerror = jest.fn();
     const onsuccess = jest.fn();
-    const socket = io('http://localhost:5979', {
+    const socket = io('http://localhost:59420', {
       query: 'auth_token=' + sign({ hi: 'fiff', hn: 'covfefe' }, 'foobar'),
     });
 
@@ -63,7 +63,7 @@ describe('SpillwayServer', () => {
   });
 
   test('doesnt let us use add_torrent without auth', async () => {
-    const socket = io('http://localhost:5979', {
+    const socket = io('http://localhost:59420', {
       query: 'auth_token=FOOBAR',
     });
 
@@ -77,7 +77,7 @@ describe('SpillwayServer', () => {
   });
 
   test('let us add a torrent with auth', async () => {
-    const socket = io('http://localhost:5979', {
+    const socket = io('http://localhost:59420', {
       query: 'auth_token=' + sign({ hi: 'fiff', hn: 'covfefe' }, 'foobar'),
     });
 
