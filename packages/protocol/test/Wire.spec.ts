@@ -17,17 +17,6 @@ describe('Up/Down stream wire', () => {
     socket.close();
   });
 
-  test('getState', async () => {
-    const getState = jest.fn().mockResolvedValueOnce(['foo']);
-    const { client, server, socket } = await createTestWires({ getState });
-
-    const state = await client.getState();
-
-    expect(getState).toHaveBeenCalledTimes(1);
-    expect(state).toEqual(['foo']);
-    socket.close();
-  });
-
   test('getPiece', async () => {
     const getPiece = jest.fn().mockResolvedValueOnce(['foo']);
     const { client, server, socket } = await createTestWires({ getPiece });

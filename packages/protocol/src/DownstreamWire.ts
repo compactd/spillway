@@ -13,16 +13,12 @@ import { log, warn } from './logger';
 // const debug = require('debug')('wire');
 
 export default class DownstreamWire implements IDownstream {
-  private state: SocketState = SocketState.Ready;
-  private stateMachine = socketStateMachine;
   constructor(private socket: SocketIO.Socket) {
     socket.on('disconnect', () => {
       log('%s: socket disconnected', socket.id);
-      this.setState(SocketState.Closed);
     });
     socket.on('error', err => {
       warn('%s: socket error: %O', socket.id, err);
-      this.setState(SocketState.Errored);
     });
   }
 
@@ -30,21 +26,9 @@ export default class DownstreamWire implements IDownstream {
     this.socket.disconnect();
   }
 
-  setStateMachine(machine: typeof socketStateMachine) {
-    this.stateMachine = machine;
-  }
-
-  setState(state: SocketState) {
-    this.state = this.stateMachine(this.state, state);
-  }
-
-  isReady() {
-    return this.state === SocketState.Ready;
-  }
-
   async addTorrent(content: Buffer) {
     log('adding torrent %o', content);
-    return this.emit('add_torrent', content);
+    await this.emit('add_torrent', content);
   }
 
   async getState(): Promise<(TorrentProperties & TorrentState)[]> {
@@ -91,14 +75,11 @@ export default class DownstreamWire implements IDownstream {
   }
 
   private emitAndCallback(fn: string, payload?: any): Promise<any> {
-    this.setState(SocketState.TransmittingData);
-
     const id = Math.random()
       .toString(16)
       .slice(2);
     return new Promise(resolve => {
       this.socket.once('fcallback_' + id, ({ data }: any) => {
-        this.setState(SocketState.Ready);
         resolve(data);
       });
       this.socket.emit('fcall_' + fn, {

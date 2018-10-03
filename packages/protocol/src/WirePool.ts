@@ -1,8 +1,6 @@
 import DownstreamWire from './DownstreamWire';
 import { EventEmitter } from 'ee-ts';
 import { AppEvent } from '@spillway/torrent-client';
-import { log } from './logger';
-import { SocketState } from './definitions';
 import { Pool, createPool } from 'generic-pool';
 
 export default class WirePool extends EventEmitter<AppEvent> {
@@ -15,7 +13,7 @@ export default class WirePool extends EventEmitter<AppEvent> {
       maxConnections: number;
       target: string;
     },
-    private WireFactory: (target: string) => DownstreamWire,
+    WireFactory: (target: string) => DownstreamWire,
   ) {
     super();
 
@@ -30,20 +28,15 @@ export default class WirePool extends EventEmitter<AppEvent> {
       },
     );
 
-    this.secondaryWire = WireFactory(this.opts.target);
-
     this.primaryWire = WireFactory(this.opts.target);
-    this.primaryWire.setStateMachine(() => SocketState.Ready);
+
+    this.secondaryWire = WireFactory(this.opts.target);
   }
 
   handleAppEvents() {
     this.primaryWire.handleAppEvent('torrent_added', torrent => {
       return this.emit('torrent_added', torrent);
     });
-  }
-
-  getState() {
-    return this.primaryWire.getState();
   }
 
   addTorrent(buffer: Buffer) {

@@ -1,4 +1,4 @@
-import { SocketState, socketStateMachine } from './definitions';
+import { SocketState } from './definitions';
 import { FunctionHandler, EventHandler } from './utils';
 import 'reflect-metadata';
 import { IClient, AppEvent, TorrentEvent } from '@spillway/torrent-client';
@@ -19,16 +19,6 @@ export default class UpstreamWire {
       );
     });
   }
-
-  setState(state: SocketState) {
-    this.state = socketStateMachine(this.state, state);
-  }
-
-  isReady() {
-    return this.state === SocketState.Ready;
-  }
-
-  setup() {}
 
   @FunctionHandler('add_torrent')
   addTorrent(buffer: Buffer) {
