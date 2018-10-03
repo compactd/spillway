@@ -3,6 +3,7 @@ import { homedir } from 'os';
 import { join } from 'path';
 
 describe('config', async () => {
+  jest.setTimeout(10000);
   beforeEach(async () => {
     // jest.spyOn(process.stdout, 'write').mockImplementation(_ => {});
   });

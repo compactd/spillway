@@ -10,6 +10,7 @@ describe('TorrentClient', () => {
   const client = new TorrentClient();
   const torrentAdded = jest.fn();
   const stateDiff = jest.fn();
+  jest.setTimeout(15000);
 
   beforeAll(async () => {
     rmfr('/tmp/webtorrent');
