@@ -7,7 +7,7 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
-    "test:ci": "jest --coverage --verbose || (DEBUG=wire,config,cli,-babel jest; false)",
+    "test:ci": "jest --coverage --verbose --runInBand || (DEBUG=wire,config,cli,-babel jest --runInBand; false)",
     "postinstall": "lerna bootstrap"
   },
   "devDependencies": {
