@@ -39,19 +39,33 @@ export default class WirePool extends EventEmitter<AppEvent> {
     });
   }
 
+  async destroy() {
+    await this.pool.drain();
+    await this.pool.clear();
+
+    this.primaryWire.close();
+    this.secondaryWire.close();
+  }
+
   addTorrent(buffer: Buffer) {
     this.primaryWire.addTorrent(buffer);
   }
 
   getAvailablePieces(id: string) {
-    return this.primaryWire.getPiecesState(id);
+    return this.secondaryWire.getPiecesState(id);
   }
 
   async getPiece(infoHash: string, index: number) {
     const wire = await this.pool.acquire();
     const piece = await wire.getPiece(infoHash, index);
+
     this.pool.release(wire);
+
     return piece;
+  }
+
+  getState() {
+    return this.primaryWire.getState();
   }
 
   /**
