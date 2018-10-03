@@ -36,7 +36,6 @@ export default class Config {
   }
 
   async getRemote(name: string, { readFile, mkdir } = fs) {
-    await this.ensureSetup({ mkdir });
     const dir = join(this.configPath, 'remotes');
 
     const data = await promisify(readFile)(join(dir, name));
