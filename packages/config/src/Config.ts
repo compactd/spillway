@@ -2,14 +2,18 @@ import { homedir } from 'os';
 import { join } from 'path';
 import { promisify } from 'util';
 import * as fs from 'fs';
+import { log, warn } from './logger';
 
 export default class Config {
   constructor(private configPath = join(homedir(), '.spillway')) {}
 
   async ensureSetup({ mkdir } = { mkdir: fs.mkdir }) {
+    log('mkdir(%s)', this.getPath());
     try {
-      await promisify(mkdir)(join(homedir(), '.spillway'));
-    } catch {}
+      await promisify(mkdir)(this.getPath());
+    } catch (e) {
+      warn('mkdir(%s): %O', this.getPath(), e);
+    }
   }
 
   async addRemote(
@@ -48,11 +52,13 @@ export default class Config {
 
   async setSecret(secret: string, { mkdir, writeFile } = fs) {
     await this.ensureSetup({ mkdir });
+    log('set secret');
     await promisify(writeFile)(
       join(this.configPath, 'secret'),
       secret,
       'utf-8',
     );
+    log('succesfully set secret');
   }
 
   getPath() {

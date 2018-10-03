@@ -3,6 +3,7 @@ import { promisify } from 'util';
 import * as fs from 'fs';
 import { Config as ServerConfig } from '@spillway/config';
 import { randomBytes } from 'crypto';
+import { log } from '../logger';
 
 export default class Config extends Command {
   static fs = fs;
@@ -35,13 +36,14 @@ export default class Config extends Command {
   async run() {
     const { args, flags } = this.parse(Config);
     const config = new ServerConfig();
-    try {
-      await promisify(fs.mkdir)(config.getPath());
-    } catch {}
+
+    log('writing to path %s', config.getPath());
 
     switch (args.op) {
       case 'set':
         if (args.key === 'secret') {
+          log('setting secret');
+
           const secret = args.value || randomBytes(512).toString('base64');
 
           await config.setSecret(secret, Config.fs);
