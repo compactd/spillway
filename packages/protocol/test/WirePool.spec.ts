@@ -100,34 +100,38 @@ describe('constructor', () => {
     expect(getPiece).toHaveBeenCalledWith('foo', 420);
   });
 
-  // test('retrieveTorrent without resuming', async () => {
-  //   const hasPiece = jest.fn().mockResolvedValue(false);
-  //   const callback = jest.fn();
+  test('retrieveTorrent without resuming', async () => {
+    const hasPiece = jest.fn().mockResolvedValue(false);
+    const callback = jest.fn();
 
-  //   getState.mockResolvedValue([]);
-  //   getPiecesState.mockResolvedValue([420, 0, 1]);
-  //   getPiece.mockResolvedValue(Buffer.from('foo'));
+    getState.mockResolvedValue([]);
+    getPiecesState.mockResolvedValue([420, 0, 1]);
+    getPiece.mockImplementation((_, index: number) => ({
+      index,
+      offset: 0,
+      content: Buffer.from('foo'),
+    }));
 
-  //   pool.retrieveTorrent('foobar', hasPiece, callback);
+    pool.retrieveTorrent('foobar', hasPiece, callback);
 
-  //   await waitExpectations(() => {
-  //     expect(handleAppEvent).toHaveBeenCalled();
-  //   });
+    await waitExpectations(() => {
+      expect(handleAppEvent).toHaveBeenCalled();
+    });
 
-  //   const [[evt, fn]] = handleAppEvent.mock.calls;
+    const [[evt, fn]] = handleAppEvent.mock.calls;
 
-  //   fn('foobar');
+    await fn('foobar');
 
-  //   await waitExpectations(() => {
-  //     expect(callback).toHaveBeenCalledTimes(3);
-  //   });
+    await waitExpectations(() => {
+      expect(callback).toHaveBeenCalledTimes(3);
+    });
 
-  //   expect(getPiece).toHaveBeenCalledTimes(3);
+    expect(getPiece).toHaveBeenCalledTimes(3);
 
-  //   expect(callback.mock.calls).toMatchObject([
-  //     [420, 0, Buffer.from('foo')],
-  //     [0, 0, Buffer.from('foo')],
-  //     [1, 0, Buffer.from('foo')],
-  //   ]);
-  // });
+    expect(callback.mock.calls).toMatchObject([
+      [420, 0, Buffer.from('foo')],
+      [0, 0, Buffer.from('foo')],
+      [1, 0, Buffer.from('foo')],
+    ]);
+  });
 });

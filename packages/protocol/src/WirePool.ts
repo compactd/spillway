@@ -2,6 +2,7 @@ import DownstreamWire from './DownstreamWire';
 import { EventEmitter } from 'ee-ts';
 import { AppEvent } from '@spillway/torrent-client';
 import { Pool, createPool } from 'generic-pool';
+import { warn } from './logger';
 
 export default class WirePool extends EventEmitter<AppEvent> {
   private pool: Pool<DownstreamWire>;
@@ -59,7 +60,11 @@ export default class WirePool extends EventEmitter<AppEvent> {
     const wire = await this.pool.acquire();
     const piece = await wire.getPiece(infoHash, index);
 
-    this.pool.release(wire);
+    try {
+      await this.pool.release(wire);
+    } catch (e) {
+      warn('error releasing wire: %o', e);
+    }
 
     return piece;
   }

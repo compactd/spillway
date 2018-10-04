@@ -3,3 +3,4 @@ coverage
 .DS_STORE
 .DS_Store
 test-report.html
+packages/cli/debian-9.5.0-amd64-netinst.iso
