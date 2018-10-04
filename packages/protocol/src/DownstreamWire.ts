@@ -1,4 +1,4 @@
-import { SocketState, socketStateMachine, IDownstream } from './definitions';
+import { IDownstream } from './definitions';
 import {
   IPiece,
   EventKey,
@@ -66,7 +66,7 @@ export default class DownstreamWire implements IDownstream {
     const id = Math.random()
       .toString(16)
       .slice(2);
-    return new Promise(resolve => {
+    return new Promise(() => {
       this.socket.emit('fcall_' + fn, {
         cb: id,
         payload,
