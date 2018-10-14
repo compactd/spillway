@@ -1,14 +1,13 @@
-import { SocketState } from './definitions';
 import { FunctionHandler, EventHandler } from './utils';
 import 'reflect-metadata';
 import { IClient, AppEvent, TorrentEvent } from '@spillway/torrent-client';
 
 // const debug = require('debug')('wire');
 
-export default class UpstreamWire {
-  state: SocketState = SocketState.Ready;
+export default class UpstreamWire<R extends {} = {}> {
   readonly socket: SocketIO.Socket;
-  public static init?: (socket: SocketIO.Socket) => {};
+
+  private extensions: Partial<R> = {};
 
   constructor(socket: SocketIO.Socket, private client: IClient) {
     this.socket = socket;
@@ -18,6 +17,14 @@ export default class UpstreamWire {
         this,
       );
     });
+  }
+
+  use<K extends keyof R>(name: K, factory: (socket: SocketIO.Socket) => R[K]) {
+    return (this.extensions[name] = factory(this.socket));
+  }
+
+  getExtension<K extends keyof R>(name: K) {
+    return this.extensions[name];
   }
 
   @FunctionHandler('add_torrent')

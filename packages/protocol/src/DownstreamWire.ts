@@ -12,7 +12,9 @@ import { log, warn } from './logger';
 
 // const debug = require('debug')('wire');
 
-export default class DownstreamWire implements IDownstream {
+export default class DownstreamWire<R extends {} = {}> implements IDownstream {
+  private extensions: Partial<R> = {};
+
   constructor(private socket: SocketIO.Socket) {
     socket.on('disconnect', () => {
       log('%s: socket disconnected', socket.id);
@@ -20,6 +22,14 @@ export default class DownstreamWire implements IDownstream {
     socket.on('error', err => {
       warn('%s: socket error: %O', socket.id, err);
     });
+  }
+
+  use<K extends keyof R>(name: K, factory: (socket: SocketIO.Socket) => R[K]) {
+    return (this.extensions[name] = factory(this.socket));
+  }
+
+  getExtension<K extends keyof R>(name: K) {
+    return this.extensions[name];
   }
 
   close() {

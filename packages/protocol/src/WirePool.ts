@@ -4,17 +4,19 @@ import { AppEvent } from '@spillway/torrent-client';
 import { Pool, createPool } from 'generic-pool';
 import { warn } from './logger';
 
-export default class WirePool extends EventEmitter<AppEvent> {
-  private pool: Pool<DownstreamWire>;
-  private primaryWire: DownstreamWire;
-  private secondaryWire: DownstreamWire;
+export default class WirePool<R extends {} = {}> extends EventEmitter<
+  AppEvent
+> {
+  private pool: Pool<DownstreamWire<R>>;
+  private primaryWire: DownstreamWire<R>;
+  private secondaryWire: DownstreamWire<R>;
 
   constructor(
     private opts: {
       maxConnections: number;
       target: string;
     },
-    WireFactory: (target: string) => DownstreamWire,
+    WireFactory: (target: string) => DownstreamWire<R>,
   ) {
     super();
 
@@ -32,6 +34,18 @@ export default class WirePool extends EventEmitter<AppEvent> {
     this.primaryWire = WireFactory(this.opts.target);
 
     this.secondaryWire = WireFactory(this.opts.target);
+  }
+
+  async withWire(fn: (wire: DownstreamWire<R>) => Promise<void>) {
+    const wire = await this.pool.acquire();
+
+    try {
+      await fn(wire);
+    } catch (err) {
+      throw err;
+    } finally {
+      this.pool.release(wire);
+    }
   }
 
   handleAppEvents() {
@@ -98,10 +112,10 @@ export default class WirePool extends EventEmitter<AppEvent> {
 
     this.getState().then(async torrents => {
       if (torrents.find(t => t.infoHash === infoHash)) {
-        const wire = await this.pool.acquire();
-        wire.getPiecesState(infoHash).then(pieces => {
-          pieces.map(pieceIndex => ({ pieceIndex })).forEach(onPiece);
-          this.pool.release(wire);
+        this.withWire(async wire => {
+          return wire.getPiecesState(infoHash).then(pieces => {
+            pieces.map(pieceIndex => ({ pieceIndex })).forEach(onPiece);
+          });
         });
       } else {
         this.secondaryWire.handleAppEvent('torrent_added', async props => {
